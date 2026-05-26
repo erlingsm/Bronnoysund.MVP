@@ -54,6 +54,7 @@
   <data name="PostalCityCol"><value>City</value></data>
   <data name="SearchPaginationHint"><value>Showing {0} of {1} hits — refine the search to narrow results.</value></data>
   <data name="NoHitsForName"><value>No companies found matching this name.</value></data>
+  <data name="OtherHitsHeader"><value>Other search hits</value></data>
 
   <!-- Aggregated detail sections (Phase 4 UI expansion) -->
   <data name="ContactSection"><value>Contact</value></data>
@@ -125,7 +126,8 @@
 
   <!-- Language switcher -->
   <data name="UiCultureLabel"><value>Language</value></data>
+  <data name="MenuAriaLabel"><value>Menu</value></data>
   <data name="LanguageEnglish"><value>English</value></data>
-  <data name="LanguageNorwegianBokmal"><value>Norwegian (Bokmål)</value></data>
-  <data name="LanguageNorwegianNynorsk"><value>Norwegian (Nynorsk)</value></data>
+  <data name="LanguageNorwegianBokmal"><value>Norsk</value></data>
+  <data name="LanguageNorwegianNynorsk"><value>Nynorsk</value></data>
 </root>

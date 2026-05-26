@@ -71,32 +71,8 @@
         <MudAlert Severity="Severity.Warning" Class="mb-4">@ViewModel.ErrorMessage</MudAlert>
     }
 
-    @if (ViewModel.SearchHits.Count > 0)
-    {
-        <MudPaper Class="pa-4 mb-4" Elevation="2">
-            <MudTable Items="@ViewModel.SearchHits" Hover="true" Dense="true" OnRowClick="OnHitClicked" T="CompanySearchHit">
-                <HeaderContent>
-                    <MudTh>@L["OrgNumberLabel"]</MudTh>
-                    <MudTh>@L["CompanyNameCol"]</MudTh>
-                    <MudTh>@L["CompanyTypeCol", ""].Value.Replace(": ", "")</MudTh>
-                    <MudTh>@L["PostalCityCol"]</MudTh>
-                </HeaderContent>
-                <RowTemplate Context="hit">
-                    <MudTd><code>@hit.OrganizationNumber</code></MudTd>
-                    <MudTd>@hit.Name</MudTd>
-                    <MudTd>@hit.OrganizationFormCode</MudTd>
-                    <MudTd>@hit.PostalCity</MudTd>
-                </RowTemplate>
-            </MudTable>
-            @if (ViewModel.SearchTotalElements > ViewModel.SearchHits.Count)
-            {
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 d-block">
-                    @L["SearchPaginationHint", ViewModel.SearchHits.Count, ViewModel.SearchTotalElements]
-                </MudText>
-            }
-        </MudPaper>
-    }
-
+    @* When the user drills down from a search hit, render the detail card FIRST so it is
+       visible without scrolling. The search list remains below as a breadcrumb to other hits. *@
     @if (ViewModel.Found is { } found)
     {
         <MudPaper Class="pa-4 mb-3" Elevation="3">
@@ -190,6 +166,38 @@
             {
                 <MudText Typo="Typo.caption" Color="Color.Success" Class="mt-3 d-block">
                     @ViewModel.StatusMessage
+                </MudText>
+            }
+        </MudPaper>
+    }
+
+    @if (ViewModel.SearchHits.Count > 0)
+    {
+        <MudPaper Class="pa-4 mb-4" Elevation="2">
+            @if (ViewModel.Found is not null)
+            {
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-2">
+                    @L["OtherHitsHeader"]
+                </MudText>
+            }
+            <MudTable Items="@ViewModel.SearchHits" Hover="true" Dense="true" OnRowClick="OnHitClicked" T="CompanySearchHit">
+                <HeaderContent>
+                    <MudTh>@L["OrgNumberLabel"]</MudTh>
+                    <MudTh>@L["CompanyNameCol"]</MudTh>
+                    <MudTh>@L["CompanyTypeCol", ""].Value.Replace(": ", "")</MudTh>
+                    <MudTh>@L["PostalCityCol"]</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="hit">
+                    <MudTd><code>@hit.OrganizationNumber</code></MudTd>
+                    <MudTd>@hit.Name</MudTd>
+                    <MudTd>@hit.OrganizationFormCode</MudTd>
+                    <MudTd>@hit.PostalCity</MudTd>
+                </RowTemplate>
+            </MudTable>
+            @if (ViewModel.SearchTotalElements > ViewModel.SearchHits.Count)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 d-block">
+                    @L["SearchPaginationHint", ViewModel.SearchHits.Count, ViewModel.SearchTotalElements]
                 </MudText>
             }
         </MudPaper>

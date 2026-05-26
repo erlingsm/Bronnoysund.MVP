@@ -1,9 +1,61 @@
 @inherits LayoutComponentBase
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using Bronnoysund.Lookup.ViewModels.Resources
+@inject NavigationManager Nav
+@inject IStringLocalizer<SharedResources> L
 
-@Body
+<MudLayout>
+    <MudAppBar Elevation="1" Color="Color.Primary">
+        <MudText Typo="Typo.h6">@L["AppTitle"]</MudText>
+        <MudSpacer />
+        <MudMenu Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Dense="true"
+                 AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight"
+                 AriaLabel="@L["MenuAriaLabel"]">
+            <MudMenuItem Icon="@LanguageIcon("en")" OnClick="@(() => SwitchCulture("en"))">
+                @L["LanguageEnglish"]
+            </MudMenuItem>
+            <MudMenuItem Icon="@LanguageIcon("nb-NO")" OnClick="@(() => SwitchCulture("nb-NO"))">
+                @L["LanguageNorwegianBokmal"]
+            </MudMenuItem>
+            <MudMenuItem Icon="@LanguageIcon("nn-NO")" OnClick="@(() => SwitchCulture("nn-NO"))">
+                @L["LanguageNorwegianNynorsk"]
+            </MudMenuItem>
+        </MudMenu>
+    </MudAppBar>
+
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private string CurrentCulture => CultureInfo.CurrentUICulture.Name switch
+    {
+        "nb-NO" or "nb" => "nb-NO",
+        "nn-NO" or "nn" => "nn-NO",
+        _ => "en",
+    };
+
+    private string LanguageIcon(string culture) =>
+        culture == CurrentCulture
+            ? Icons.Material.Filled.Check
+            : Icons.Material.Filled.Language;
+
+    private void SwitchCulture(string culture)
+    {
+        if (culture == CurrentCulture)
+        {
+            return;
+        }
+        var redirectUri = new Uri(Nav.Uri).PathAndQuery;
+        var target = $"/set-culture?culture={Uri.EscapeDataString(culture)}&redirectUri={Uri.EscapeDataString(redirectUri)}";
+        Nav.NavigateTo(target, forceLoad: true);
+    }
+}
