@@ -31,7 +31,7 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
 
-  <data name="AppTitle"><value>Virksomhetsinformasjon/value></data>
+  <data name="AppTitle"><value>Virksomhetsinformasjon</value></data>
 
   <data name="LookupTitle"><value>Virksomhetsinformasjon fra Brønnøysundregistrene</value></data>
   <data name="LookupDescription"><value>Slå opp norske virksomheter i Enhetsregisteret. Skriv organisasjonsnummer (9 siffer, starter på 8 eller 9).</value></data>
