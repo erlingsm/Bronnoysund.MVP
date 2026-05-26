@@ -49,6 +49,7 @@
   <data name="SearchByNamePlaceholder"><value>f.eks. Statens vegvesen</value></data>
   <data name="SearchButtonName"><value>Søk</value></data>
   <data name="CompanyNameCol"><value>Navn</value></data>
+  <data name="CompanyTypeColHeader"><value>Form</value></data>
   <data name="PostalCityCol"><value>Sted</value></data>
   <data name="SearchPaginationHint"><value>Viser {0} av {1} treff — søk mer presist for å snevre inn.</value></data>
   <data name="NoHitsForName"><value>Ingen virksomheter funnet med dette navnet.</value></data>

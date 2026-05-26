@@ -51,6 +51,7 @@
   <data name="SearchByNamePlaceholder"><value>e.g. Statens vegvesen</value></data>
   <data name="SearchButtonName"><value>Search</value></data>
   <data name="CompanyNameCol"><value>Name</value></data>
+  <data name="CompanyTypeColHeader"><value>Type</value></data>
   <data name="PostalCityCol"><value>City</value></data>
   <data name="SearchPaginationHint"><value>Showing {0} of {1} hits — refine the search to narrow results.</value></data>
   <data name="NoHitsForName"><value>No companies found matching this name.</value></data>

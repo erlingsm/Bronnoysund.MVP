@@ -49,6 +49,7 @@
   <data name="SearchByNamePlaceholder"><value>t.d. Statens vegvesen</value></data>
   <data name="SearchButtonName"><value>Søk</value></data>
   <data name="CompanyNameCol"><value>Namn</value></data>
+  <data name="CompanyTypeColHeader"><value>Form</value></data>
   <data name="PostalCityCol"><value>Stad</value></data>
   <data name="SearchPaginationHint"><value>Viser {0} av {1} treff — søk meir presist for å snevre inn.</value></data>
   <data name="NoHitsForName"><value>Inga verksemd funne med dette namnet.</value></data>
