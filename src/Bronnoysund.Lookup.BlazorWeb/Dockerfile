@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later OR LicenseRef-Commercial
+# SPDX-License-Identifier: MIT
 
 # Multi-stage build for ASP.NET Core 10.0 — final image is Alpine for minimal size.
 # Build from repo root:

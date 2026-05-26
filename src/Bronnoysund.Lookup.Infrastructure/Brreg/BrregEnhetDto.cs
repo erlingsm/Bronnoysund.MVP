@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later OR LicenseRef-Commercial
+// SPDX-License-Identifier: MIT
 
 using System.Text.Json.Serialization;
 using Bronnoysund.Lookup.Domain;

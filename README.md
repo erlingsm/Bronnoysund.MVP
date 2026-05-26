@@ -160,7 +160,4 @@ Inspired by (no code copied — own implementation per the assignment):
 
 ## License
 
-Dual-licensed:
-
-- [AGPL-3.0-or-later](LICENSE) (open-source)
-- [Commercial license from Røa Systemutvikling AS](COMMERCIAL-LICENSE.md) (org.nr 933722821)
+[MIT](LICENSE) — © 2026 Erling Svanberg Mytting.
