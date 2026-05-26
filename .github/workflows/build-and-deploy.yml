@@ -1,0 +1,92 @@
+name: Build, test, and deploy
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  id-token: write     # required for OIDC token exchange with Azure AD
+  contents: read
+
+env:
+  RG: bronnoysund-mvp-rg
+  ACR: bronnoysundmvp04726
+  APP: bronnoysund-mvp
+  URL: https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io
+
+jobs:
+  build-and-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --nologo -c Release
+
+      - name: Test
+        run: dotnet test --no-build --nologo -c Release --logger "console;verbosity=normal"
+
+  deploy:
+    name: Deploy to Azure Container Apps
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC, federated credential)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build image in ACR
+        run: |
+          az acr build \
+            --registry "$ACR" \
+            --image "${APP}:${{ github.sha }}" \
+            --image "${APP}:latest" \
+            --file src/Bronnoysund.BlazorWeb/Dockerfile \
+            .
+
+      - name: Update Container App
+        run: |
+          az containerapp update \
+            --name "$APP" \
+            --resource-group "$RG" \
+            --image "${ACR}.azurecr.io/${APP}:${{ github.sha }}" \
+            --query "properties.latestRevisionName" \
+            -o tsv
+
+      - name: Smoke test
+        run: |
+          sleep 15
+          HTTP_CODE="$(curl -fsS --max-time 30 -o /dev/null -w "%{http_code}" "$URL/" || echo "000")"
+          if [[ "$HTTP_CODE" != "200" ]]; then
+            echo "Smoke test failed: HTTP $HTTP_CODE" >&2
+            exit 1
+          fi
+          echo "Live: $URL ($HTTP_CODE)"
+
+      - name: Deploy summary
+        if: success()
+        run: |
+          {
+            echo "## Deployed"
+            echo ""
+            echo "- **Image**: \`${ACR}.azurecr.io/${APP}:${{ github.sha }}\`"
+            echo "- **Live**: <${URL}/>"
+            echo "- **Triggered by**: @${{ github.actor }}"
+          } >> "$GITHUB_STEP_SUMMARY"

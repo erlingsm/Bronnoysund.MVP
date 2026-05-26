@@ -360,12 +360,8 @@ app.MapGet("/set-culture", (string culture, string redirectUri, HttpContext ctx)
 
 <section>
     <h2>Deploy — Azure Container Apps</h2>
-    <p class="muted">Ett terminal-script. Ingen CI, ingen YAML — kjør lokalt før hver leveranse.</p>
+    <p class="muted">Image bygges i ACR (ingen lokal Docker-daemon) og rulles ut som en ny revision i Container App.</p>
     <pre><code class="language-bash" data-trim>
-# deploy/deploy.sh
-dotnet build --nologo -v minimal
-dotnet test  --no-build --nologo
-
 TAG="$(git rev-parse --short HEAD)"
 
 az acr build \
@@ -378,7 +374,39 @@ az containerapp update \
     --resource-group    bronnoysund-mvp-rg \
     --image             "bronnoysundmvp04726.azurecr.io/bronnoysund-mvp:${TAG}"
     </code></pre>
-    <p class="small muted">Alpine multi-stage Dockerfile. <code>az acr build</code> — ingen lokal Docker-daemon nødvendig.</p>
+    <p class="small muted">Alpine multi-stage Dockerfile med <code>icu-libs</code> for full globalisering. To veier inn: lokal <code>./deploy/deploy.sh</code> eller GitHub Actions (neste slide).</p>
+</section>
+
+<section>
+    <h2>CI/CD — GitHub Actions + OIDC</h2>
+    <p class="muted">Ingen secrets lagret i GitHub. Test-gate gjør at røde tester aldri når produksjon.</p>
+    <pre><code class="language-yaml" data-trim>
+# .github/workflows/build-and-deploy.yml
+jobs:
+  build-and-test:                                    # på push, PR, og manual dispatch
+    steps: [ checkout, setup-dotnet, restore, build, test ]
+
+  deploy:
+    needs: build-and-test                            # ← test-gate
+    if: github.event_name == 'push' &amp;&amp; github.ref == 'refs/heads/master'
+    steps:
+      - uses: azure/login@v2                         # OIDC — ingen client-secret
+        with: { client-id, tenant-id, subscription-id }
+      - run: az acr build ...
+      - run: az containerapp update ...
+    </code></pre>
+    <h3>Auth-flyten — null secrets i GitHub</h3>
+    <pre class="ascii">
+GitHub Actions ──[OIDC token]──► Azure AD ──► [federated credential match] ──► access token
+                                       ↑
+              subject: repo:erlingsm/Bronnoysund.MVP:ref:refs/heads/master
+    </pre>
+    <ul>
+        <li><span class="accent">Test-gate</span>: <code>needs: build-and-test</code> stopper deploy hvis én test feiler.</li>
+        <li><span class="accent">PR-approval</span>: branch protection krever review før merge til master.</li>
+        <li><span class="accent">RBAC</span>: AcrPush på registry + Contributor på Container App-ressursen (ikke bredere).</li>
+        <li><span class="accent">Sporbarhet</span>: image-tag = <code>github.sha</code>, rollback er én <code>az</code>-kommando.</li>
+    </ul>
 </section>
 
 <section>
