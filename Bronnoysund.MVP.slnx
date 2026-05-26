@@ -19,11 +19,6 @@
     <File Path="deploy/deploy.sh" />
     <File Path="deploy/teardown.sh" />
   </Folder>
-  <Folder Name="/docs/">
-    <File Path="docs/handoff-2026-05-26.md" />
-    <File Path="docs/review-2026-05-26.md" />
-    <File Path="docs/sensor-prep-2026-05-26.md" />
-  </Folder>
   <Folder Name="/docs/presentation/">
     <File Path="docs/presentation/index.html" />
   </Folder>

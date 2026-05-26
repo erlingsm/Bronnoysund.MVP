@@ -21,3 +21,8 @@ dist/
 
 # Runtime logs (Serilog rolling file output)
 **/logs/
+
+# Private working docs — local only, never on GitHub
+docs/handoff-*.md
+docs/review-*.md
+docs/sensor-prep-*.md
