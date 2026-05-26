@@ -68,6 +68,12 @@ try
         .AddInteractiveServerRenderMode()
         .AddAdditionalAssemblies(typeof(Bronnoysund.Components.Pages.Lookup).Assembly);
 
+    // GET is unconventional for a cookie-setting endpoint — POST is the textbook choice.
+    // Safety is preserved here by two load-bearing checks: (1) the culture parameter is
+    // validated against the closed `supportedCultures` allowlist, so an attacker can only
+    // toggle the user between the three supported cultures; (2) `Results.LocalRedirect`
+    // rejects any off-site target. The worst a crafted link can do is flip a user's UI
+    // language — no XSS, no open redirect, no privilege escalation.
     app.MapGet("/set-culture", (string culture, string redirectUri, HttpContext ctx) =>
     {
         if (Array.IndexOf(supportedCultures, culture) < 0)
