@@ -58,8 +58,23 @@ public sealed partial class CompanyLookupViewModel(
             return;
         }
 
+        // Fresh user-initiated lookup — clear any prior search-hit breadcrumb.
+        SearchHits = [];
+        SearchTotalElements = 0;
+        await LookupCoreAsync(ct);
+    }
+
+    /// <summary>
+    /// Shared lookup pipeline used by both <see cref="LookupAsync"/> (fresh user input) and
+    /// <see cref="SelectHitAsync"/> (drill-down from a search hit). Does not touch
+    /// <c>SearchHits</c>: the public methods decide whether to preserve or clear it.
+    /// </summary>
+    private async Task LookupCoreAsync(CancellationToken ct)
+    {
         IsBusy = true;
-        ResetTransientState();
+        ErrorMessage = null;
+        StatusMessage = null;
+        Found = null;
 
         try
         {
@@ -96,7 +111,11 @@ public sealed partial class CompanyLookupViewModel(
         }
 
         IsBusy = true;
-        ResetTransientState();
+        ErrorMessage = null;
+        StatusMessage = null;
+        Found = null;
+        SearchHits = [];
+        SearchTotalElements = 0;
 
         try
         {
@@ -127,22 +146,11 @@ public sealed partial class CompanyLookupViewModel(
 
     public async Task SelectHitAsync(CompanySearchHit hit, CancellationToken ct)
     {
-        var preservedHits = SearchHits;
-        var preservedTotal = SearchTotalElements;
-
+        if (IsBusy)
+        {
+            return;
+        }
         OrgNumberInput = hit.OrganizationNumber;
-        await LookupAsync(ct);
-
-        SearchHits = preservedHits;
-        SearchTotalElements = preservedTotal;
-    }
-
-    private void ResetTransientState()
-    {
-        ErrorMessage = null;
-        StatusMessage = null;
-        Found = null;
-        SearchHits = [];
-        SearchTotalElements = 0;
+        await LookupCoreAsync(ct);
     }
 }
