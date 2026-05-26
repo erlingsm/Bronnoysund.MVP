@@ -22,8 +22,12 @@
   <Folder Name="/docs/">
     <File Path="docs/handoff-2026-05-26.md" />
     <File Path="docs/review-2026-05-26.md" />
+    <File Path="docs/sensor-prep-2026-05-26.md" />
   </Folder>
   <Folder Name="/docs/presentation/">
     <File Path="docs/presentation/index.html" />
+  </Folder>
+  <Folder Name="/.github/workflows/">
+    <File Path=".github/workflows/build-and-deploy.yml" />
   </Folder>
 </Solution>
