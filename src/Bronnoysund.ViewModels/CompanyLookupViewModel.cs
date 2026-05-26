@@ -47,6 +47,11 @@ public sealed partial class CompanyLookupViewModel(
     [RelayCommand]
     public async Task LookupAsync(CancellationToken ct)
     {
+        if (IsBusy)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(OrgNumberInput))
         {
             ErrorMessage = localizer["EnterOrgNumber"];
@@ -85,6 +90,11 @@ public sealed partial class CompanyLookupViewModel(
     [RelayCommand]
     public async Task SearchByNameAsync(CancellationToken ct)
     {
+        if (IsBusy)
+        {
+            return;
+        }
+
         IsBusy = true;
         ResetTransientState();
 
