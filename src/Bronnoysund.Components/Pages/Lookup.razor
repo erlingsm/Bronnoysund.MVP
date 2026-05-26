@@ -205,6 +205,11 @@
 </MudContainer>
 
 @code {
+    // Cancellation source bound to this page's lifetime. Tokens passed to the view-model are
+    // cancelled when the user navigates away or the circuit closes, so in-flight Brreg calls
+    // and the resulting handler/HybridCache work get a co-operative cancel signal.
+    private readonly CancellationTokenSource _cts = new();
+
     protected override async Task OnInitializedAsync()
     {
         ViewModel.PropertyChanged += OnViewModelChanged;
@@ -218,12 +223,12 @@
         {
             ViewModel.IsNameSearchMode = true;
             ViewModel.NameQueryInput = name;
-            await ViewModel.SearchByNameAsync(CancellationToken.None);
+            await ViewModel.SearchByNameAsync(_cts.Token);
         }
         else if (!string.IsNullOrWhiteSpace(orgnr))
         {
             ViewModel.OrgNumberInput = orgnr;
-            await ViewModel.LookupAsync(CancellationToken.None);
+            await ViewModel.LookupAsync(_cts.Token);
         }
     }
 
@@ -239,15 +244,15 @@
         ViewModel.Found = null;
     }
 
-    private async Task OnLookupClicked() => await ViewModel.LookupAsync(CancellationToken.None);
+    private async Task OnLookupClicked() => await ViewModel.LookupAsync(_cts.Token);
 
-    private async Task OnSearchClicked() => await ViewModel.SearchByNameAsync(CancellationToken.None);
+    private async Task OnSearchClicked() => await ViewModel.SearchByNameAsync(_cts.Token);
 
     private async Task OnOrgNumberKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && !ViewModel.IsBusy)
         {
-            await ViewModel.LookupAsync(CancellationToken.None);
+            await ViewModel.LookupAsync(_cts.Token);
         }
     }
 
@@ -255,7 +260,7 @@
     {
         if (e.Key == "Enter" && !ViewModel.IsBusy)
         {
-            await ViewModel.SearchByNameAsync(CancellationToken.None);
+            await ViewModel.SearchByNameAsync(_cts.Token);
         }
     }
 
@@ -263,7 +268,7 @@
     {
         if (args.Item is not null)
         {
-            await ViewModel.SelectHitAsync(args.Item, CancellationToken.None);
+            await ViewModel.SelectHitAsync(args.Item, _cts.Token);
         }
     }
 
@@ -300,5 +305,7 @@
     public void Dispose()
     {
         ViewModel.PropertyChanged -= OnViewModelChanged;
+        _cts.Cancel();
+        _cts.Dispose();
     }
 }
