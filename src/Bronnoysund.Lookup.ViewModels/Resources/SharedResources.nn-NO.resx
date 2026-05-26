@@ -31,10 +31,10 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
 
-  <data name="AppTitle"><value>Bronnoysund Lookup</value></data>
+  <data name="AppTitle"><value>Informasjon om føretak</value></data>
 
-  <data name="LookupTitle"><value>Bronnoysund Lookup</value></data>
-  <data name="LookupDescription"><value>Slå opp norske verksemder i Einingsregisteret. Skriv organisasjonsnummer (9 siffer, startar på 8 eller 9).</value></data>
+  <data name="LookupTitle"><value>Informasjon om føretak frå Brønnøysundregistera</value></data>
+  <data name="LookupDescription"><value>Slå opp norske føretak i Einingsregisteret. Skriv organisasjonsnummer (9 siffer, startar på 8 eller 9).</value></data>
   <data name="OrgNumberLabel"><value>Organisasjonsnummer</value></data>
   <data name="OrgNumberPlaceholder"><value>t.d. 919300388</value></data>
   <data name="SearchButton"><value>Slå opp</value></data>

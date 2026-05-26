@@ -34,8 +34,8 @@
   <data name="AppTitle"><value>Bronnoysund Lookup</value></data>
 
   <!-- Lookup page -->
-  <data name="LookupTitle"><value>Bronnoysund Lookup</value></data>
-  <data name="LookupDescription"><value>Look up Norwegian companies in the central business register. Enter an organization number (9 digits, starting with 8 or 9).</value></data>
+  <data name="LookupTitle"><value>Information about companies from the Brønnøysund Register Centre</value></data>
+  <data name="LookupDescription"><value>Look up Norwegian companies registered in the Brønnøysund Register Centre. Enter an organization number (9 digits, starting with 8 or 9).</value></data>
   <data name="OrgNumberLabel"><value>Organization number</value></data>
   <data name="OrgNumberPlaceholder"><value>e.g. 919300388</value></data>
   <data name="SearchButton"><value>Look up</value></data>
