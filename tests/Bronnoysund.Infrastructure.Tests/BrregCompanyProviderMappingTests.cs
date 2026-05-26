@@ -145,6 +145,29 @@ public class BrregCompanyProviderMappingTests : IDisposable
     }
 
     [Fact]
+    public async Task DtoMissingCriticalFields_ReturnsUnavailable()
+    {
+        // Brreg responded 200 but the payload is missing essential fields (here: `navn`).
+        // BrregEnhetDto.ToDomain returns null in this case, and the provider surfaces it as
+        // Unavailable rather than Found-with-empty-data or a thrown exception. Catches the
+        // class of schema-drift bugs where Brreg silently drops a field we depend on.
+        const string body = """
+            {
+              "organisasjonsnummer": "919300388",
+              "organisasjonsform": { "kode": "AS" }
+            }
+            """;
+        _wireMock.Given(Request.Create().WithPath("/enheter/919300388").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json").WithBody(body));
+
+        var result = await _sut.LookupAsync(OrganizationNumber.Create("919300388"), CancellationToken.None);
+
+        result.Should().BeOfType<CompanyLookupResult.Unavailable>()
+            .Which.Message.Should().Contain("unexpected");
+    }
+
+    [Fact]
     public async Task EmployeeCount_IsNullWhenNotRegistered()
     {
         // Brreg returns antallAnsatte=0 with harRegistrertAntallAnsatte=false for entities that
