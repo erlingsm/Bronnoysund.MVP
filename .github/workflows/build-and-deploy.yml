@@ -15,6 +15,9 @@ env:
   ACR: bronnoysundmvp04726
   APP: bronnoysund-mvp
   URL: https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io
+  # Opt in to Node.js 24 for JS-based actions now (default from June 2026).
+  # Silences the Node.js 20 deprecation notice on checkout / setup-dotnet / azure-login.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   build-and-test:
