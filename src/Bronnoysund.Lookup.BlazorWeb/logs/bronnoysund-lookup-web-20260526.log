@@ -1,0 +1,38 @@
+2026-05-26 15:07:19.756 +02:00 [INF] User profile is available. Using '/Users/esm/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
+2026-05-26 15:07:19.798 +02:00 [INF] Bronnoysund.Lookup.BlazorWeb starting on 
+2026-05-26 15:07:19.867 +02:00 [INF] Now listening on: http://localhost:5199
+2026-05-26 15:07:19.868 +02:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-05-26 15:07:19.868 +02:00 [INF] Hosting environment: Development
+2026-05-26 15:07:19.868 +02:00 [INF] Content root path: /Users/esm/UtviklingPrivat/Bronnoysund.Lookup.MVP/src/Bronnoysund.Lookup.BlazorWeb
+2026-05-26 15:08:25.305 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/ - null null
+2026-05-26 15:08:25.317 +02:00 [INF] Executing endpoint '/ (/)'
+2026-05-26 15:08:25.441 +02:00 [INF] Executed endpoint '/ (/)'
+2026-05-26 15:08:25.442 +02:00 [INF] HTTP GET / responded 200 in 125.6786 ms
+2026-05-26 15:08:25.450 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/ - 200 null text/html; charset=utf-8 145.73ms
+2026-05-26 15:08:25.452 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/lookup - null null
+2026-05-26 15:08:25.453 +02:00 [INF] Executing endpoint '/lookup (/lookup)'
+2026-05-26 15:08:25.457 +02:00 [INF] Executed endpoint '/lookup (/lookup)'
+2026-05-26 15:08:25.457 +02:00 [INF] HTTP GET /lookup responded 200 in 4.4956 ms
+2026-05-26 15:08:25.458 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/lookup - 200 null text/html; charset=utf-8 6.045ms
+2026-05-26 15:08:25.465 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/settings - null null
+2026-05-26 15:08:25.467 +02:00 [INF] Executing endpoint '/settings (/settings)'
+2026-05-26 15:08:25.485 +02:00 [INF] Executed endpoint '/settings (/settings)'
+2026-05-26 15:08:25.485 +02:00 [INF] HTTP GET /settings responded 200 in 18.0143 ms
+2026-05-26 15:08:25.487 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/settings - 200 null text/html; charset=utf-8 22.0752ms
+2026-05-26 15:08:25.494 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/set-culture?culture=nb-NO&redirectUri=/lookup - null null
+2026-05-26 15:08:25.495 +02:00 [INF] Executing endpoint 'HTTP: GET /set-culture'
+2026-05-26 15:08:25.500 +02:00 [INF] Executing RedirectResult, redirecting to /lookup.
+2026-05-26 15:08:25.500 +02:00 [INF] Executed endpoint 'HTTP: GET /set-culture'
+2026-05-26 15:08:25.500 +02:00 [INF] HTTP GET /set-culture responded 302 in 5.8928 ms
+2026-05-26 15:08:25.500 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/set-culture?culture=nb-NO&redirectUri=/lookup - 302 0 null 6.0987ms
+2026-05-26 15:08:25.507 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/ - null null
+2026-05-26 15:08:25.507 +02:00 [INF] Executing endpoint '/ (/)'
+2026-05-26 15:08:25.509 +02:00 [INF] Executed endpoint '/ (/)'
+2026-05-26 15:08:25.509 +02:00 [INF] HTTP GET / responded 200 in 1.8932 ms
+2026-05-26 15:08:25.509 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/ - 200 null text/html; charset=utf-8 2.1915ms
+2026-05-26 15:08:25.518 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/ - null null
+2026-05-26 15:08:25.518 +02:00 [INF] Executing endpoint '/ (/)'
+2026-05-26 15:08:25.519 +02:00 [INF] Executed endpoint '/ (/)'
+2026-05-26 15:08:25.519 +02:00 [INF] HTTP GET / responded 200 in 1.3882 ms
+2026-05-26 15:08:25.519 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/ - 200 null text/html; charset=utf-8 1.7206ms
+2026-05-26 15:24:50.988 +02:00 [INF] Application is shutting down...

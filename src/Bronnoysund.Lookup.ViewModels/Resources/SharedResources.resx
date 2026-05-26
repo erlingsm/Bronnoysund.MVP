@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="xml:space" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+
+  <data name="AppTitle"><value>Bronnoysund Lookup</value></data>
+
+  <!-- Lookup page -->
+  <data name="LookupTitle"><value>Bronnoysund Lookup</value></data>
+  <data name="LookupDescription"><value>Look up Norwegian companies in the central business register. Enter an organization number (9 digits, starting with 8 or 9).</value></data>
+  <data name="OrgNumberLabel"><value>Organization number</value></data>
+  <data name="OrgNumberPlaceholder"><value>e.g. 919300388</value></data>
+  <data name="SearchButton"><value>Look up</value></data>
+  <data name="Searching"><value>Searching…</value></data>
+  <data name="OrgNumberRow"><value>Organization Number: {0}</value></data>
+  <data name="CompanyTypeRow"><value>Company Type: {0}</value></data>
+  <data name="LanguageFormRow"><value>Language Form: {0}</value></data>
+
+  <!-- Name search -->
+  <data name="SearchModeOrgNumber"><value>Organization number</value></data>
+  <data name="SearchModeName"><value>Name</value></data>
+  <data name="SearchByNameLabel"><value>Company name</value></data>
+  <data name="SearchByNamePlaceholder"><value>e.g. Statens vegvesen</value></data>
+  <data name="SearchButtonName"><value>Search</value></data>
+  <data name="CompanyNameCol"><value>Name</value></data>
+  <data name="PostalCityCol"><value>City</value></data>
+  <data name="SearchPaginationHint"><value>Showing {0} of {1} hits — refine the search to narrow results.</value></data>
+  <data name="NoHitsForName"><value>No companies found matching this name.</value></data>
+
+  <!-- Aggregated detail sections (Phase 4 UI expansion) -->
+  <data name="ContactSection"><value>Contact</value></data>
+  <data name="AddressLabel"><value>Address</value></data>
+  <data name="WebsiteLabel"><value>Website</value></data>
+  <data name="EmailLabel"><value>Email</value></data>
+  <data name="PhoneLabel"><value>Phone</value></data>
+  <data name="MobileLabel"><value>Mobile</value></data>
+  <data name="ActivitySection"><value>Activity</value></data>
+  <data name="IndustryLabel"><value>Industry</value></data>
+  <data name="EmployeesLabel"><value>Employees</value></data>
+  <data name="SectorLabel"><value>Sector</value></data>
+  <data name="DatesSection"><value>Lifecycle</value></data>
+  <data name="FoundingDateLabel"><value>Founded</value></data>
+  <data name="RegisteredDateLabel"><value>Registered with Brreg</value></data>
+  <data name="VatRegistryLabel"><value>VAT registry</value></data>
+  <data name="BusinessRegistryLabel"><value>Business registry (Foretaksregisteret)</value></data>
+  <data name="RolesSection"><value>Roles</value></data>
+  <data name="RolesPerson"><value>Person</value></data>
+  <data name="RolesRoleType"><value>Role</value></data>
+  <data name="RolesBirthDate"><value>Born</value></data>
+  <data name="NoRoles"><value>No active roles registered.</value></data>
+  <data name="SubUnitsSection"><value>Sub-units</value></data>
+  <data name="NoSubUnits"><value>No sub-units registered.</value></data>
+  <data name="BankruptcyAlert"><value>This company is declared bankrupt {0}.</value></data>
+  <data name="BankruptcyAlertNoDate"><value>This company is declared bankrupt.</value></data>
+  <data name="RegistryErrorsSection"><value>Registry warnings</value></data>
+  <data name="RegistryErrorRow"><value>{0}: {1}</value></data>
+  <data name="YesValue"><value>yes</value></data>
+  <data name="NoValue"><value>no</value></data>
+
+  <!-- Lookup ViewModel messages -->
+  <data name="EnterOrgNumber"><value>Enter an organization number.</value></data>
+  <data name="FoundInRegistry"><value>Found in the Brønnøysund Register Centre.</value></data>
+  <data name="NotFoundForOrgNumber"><value>No company with organization number {0} was found.</value></data>
+  <data name="RegistryUnavailable"><value>The Brønnøysund Register Centre is temporarily unavailable: {0}</value></data>
+
+  <!-- Settings page -->
+  <data name="SettingsTitle"><value>Settings</value></data>
+  <data name="SettingsDescription"><value>User overrides for appsettings.json. Changes trigger live reload via IOptionsMonitor — no restart needed. Keys use IConfiguration syntax (e.g. Brreg:BaseUrl, Persistence:Cache:MaxSizeMB).</value></data>
+  <data name="AddKey"><value>New key</value></data>
+  <data name="Export"><value>Export</value></data>
+  <data name="Import"><value>Import</value></data>
+  <data name="Reset"><value>Reset</value></data>
+  <data name="KeyCol"><value>Key</value></data>
+  <data name="ValueCol"><value>Value</value></data>
+  <data name="TypeCol"><value>Type</value></data>
+  <data name="ActionsCol"><value>Actions</value></data>
+  <data name="NoSettings"><value>No user settings yet. Defaults from appsettings.json are used.</value></data>
+  <data name="NewSettingTitle"><value>New setting</value></data>
+  <data name="KeyLabel"><value>Key</value></data>
+  <data name="KeyPlaceholder"><value>e.g. Brreg:BaseUrl</value></data>
+  <data name="ValueLabel"><value>Value</value></data>
+  <data name="TypeLabel"><value>Type</value></data>
+  <data name="Cancel"><value>Cancel</value></data>
+  <data name="Add"><value>Add</value></data>
+  <data name="ExportTitle"><value>Exported JSON</value></data>
+  <data name="ExportDescription"><value>Copy the text below and save to a file to transfer settings to another device.</value></data>
+  <data name="Close"><value>Close</value></data>
+  <data name="ImportTitle"><value>Import JSON</value></data>
+  <data name="ImportDescription"><value>Paste an exported payload. Existing keys are overwritten; unknown keys are preserved.</value></data>
+  <data name="Saved"><value>Saved {0}</value></data>
+  <data name="Deleted"><value>Deleted {0} — default from appsettings.json now applies</value></data>
+  <data name="KeyEmpty"><value>Key cannot be empty</value></data>
+  <data name="Added"><value>Added {0}</value></data>
+  <data name="ImportFailed"><value>Import failed: {0}</value></data>
+  <data name="Imported"><value>Imported</value></data>
+  <data name="AllRemoved"><value>All settings removed — using defaults from appsettings.json</value></data>
+
+  <!-- Language switcher -->
+  <data name="UiCultureLabel"><value>Language</value></data>
+  <data name="LanguageEnglish"><value>English</value></data>
+  <data name="LanguageNorwegianBokmal"><value>Norwegian (Bokmål)</value></data>
+  <data name="LanguageNorwegianNynorsk"><value>Norwegian (Nynorsk)</value></data>
+</root>

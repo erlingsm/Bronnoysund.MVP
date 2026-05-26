@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="xml:space" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+
+  <data name="AppTitle"><value>Bronnoysund Lookup</value></data>
+
+  <data name="LookupTitle"><value>Bronnoysund Lookup</value></data>
+  <data name="LookupDescription"><value>Slå opp norske virksomheter i Enhetsregisteret. Skriv organisasjonsnummer (9 siffer, starter på 8 eller 9).</value></data>
+  <data name="OrgNumberLabel"><value>Organisasjonsnummer</value></data>
+  <data name="OrgNumberPlaceholder"><value>f.eks. 919300388</value></data>
+  <data name="SearchButton"><value>Slå opp</value></data>
+  <data name="Searching"><value>Søker…</value></data>
+  <data name="OrgNumberRow"><value>Organisasjonsnummer: {0}</value></data>
+  <data name="CompanyTypeRow"><value>Virksomhetsform: {0}</value></data>
+  <data name="LanguageFormRow"><value>Målform: {0}</value></data>
+
+  <data name="SearchModeOrgNumber"><value>Organisasjonsnummer</value></data>
+  <data name="SearchModeName"><value>Navn</value></data>
+  <data name="SearchByNameLabel"><value>Virksomhetsnavn</value></data>
+  <data name="SearchByNamePlaceholder"><value>f.eks. Statens vegvesen</value></data>
+  <data name="SearchButtonName"><value>Søk</value></data>
+  <data name="CompanyNameCol"><value>Navn</value></data>
+  <data name="PostalCityCol"><value>Sted</value></data>
+  <data name="SearchPaginationHint"><value>Viser {0} av {1} treff — søk mer presist for å snevre inn.</value></data>
+  <data name="NoHitsForName"><value>Ingen virksomheter funnet med dette navnet.</value></data>
+
+  <data name="ContactSection"><value>Kontakt</value></data>
+  <data name="AddressLabel"><value>Adresse</value></data>
+  <data name="WebsiteLabel"><value>Nettside</value></data>
+  <data name="EmailLabel"><value>E-post</value></data>
+  <data name="PhoneLabel"><value>Telefon</value></data>
+  <data name="MobileLabel"><value>Mobil</value></data>
+  <data name="ActivitySection"><value>Aktivitet</value></data>
+  <data name="IndustryLabel"><value>Næring</value></data>
+  <data name="EmployeesLabel"><value>Ansatte</value></data>
+  <data name="SectorLabel"><value>Sektor</value></data>
+  <data name="DatesSection"><value>Livssyklus</value></data>
+  <data name="FoundingDateLabel"><value>Stiftet</value></data>
+  <data name="RegisteredDateLabel"><value>Registrert hos Brreg</value></data>
+  <data name="VatRegistryLabel"><value>MVA-registeret</value></data>
+  <data name="BusinessRegistryLabel"><value>Foretaksregisteret</value></data>
+  <data name="RolesSection"><value>Roller</value></data>
+  <data name="RolesPerson"><value>Person</value></data>
+  <data name="RolesRoleType"><value>Rolle</value></data>
+  <data name="RolesBirthDate"><value>Født</value></data>
+  <data name="NoRoles"><value>Ingen aktive roller registrert.</value></data>
+  <data name="SubUnitsSection"><value>Underenheter</value></data>
+  <data name="NoSubUnits"><value>Ingen underenheter registrert.</value></data>
+  <data name="BankruptcyAlert"><value>Denne virksomheten er erklært konkurs {0}.</value></data>
+  <data name="BankruptcyAlertNoDate"><value>Denne virksomheten er erklært konkurs.</value></data>
+  <data name="RegistryErrorsSection"><value>Register-advarsler</value></data>
+  <data name="RegistryErrorRow"><value>{0}: {1}</value></data>
+  <data name="YesValue"><value>ja</value></data>
+  <data name="NoValue"><value>nei</value></data>
+
+  <data name="EnterOrgNumber"><value>Skriv inn et organisasjonsnummer.</value></data>
+  <data name="FoundInRegistry"><value>Funnet i Brønnøysundregistrene.</value></data>
+  <data name="NotFoundForOrgNumber"><value>Ingen virksomhet med organisasjonsnummer {0} ble funnet.</value></data>
+  <data name="RegistryUnavailable"><value>Brønnøysundregistrene er midlertidig utilgjengelig: {0}</value></data>
+
+  <data name="SettingsTitle"><value>Innstillinger</value></data>
+  <data name="SettingsDescription"><value>Bruker-overstyringer av appsettings.json. Endringer trigger live-reload via IOptionsMonitor — ingen restart. Nøkler bruker IConfiguration-syntax (f.eks. Brreg:BaseUrl, Persistence:Cache:MaxSizeMB).</value></data>
+  <data name="AddKey"><value>Ny nøkkel</value></data>
+  <data name="Export"><value>Eksporter</value></data>
+  <data name="Import"><value>Importer</value></data>
+  <data name="Reset"><value>Tilbakestill</value></data>
+  <data name="KeyCol"><value>Nøkkel</value></data>
+  <data name="ValueCol"><value>Verdi</value></data>
+  <data name="TypeCol"><value>Type</value></data>
+  <data name="ActionsCol"><value>Handlinger</value></data>
+  <data name="NoSettings"><value>Ingen brukerinnstillinger ennå. Default-verdier fra appsettings.json brukes.</value></data>
+  <data name="NewSettingTitle"><value>Ny innstilling</value></data>
+  <data name="KeyLabel"><value>Nøkkel</value></data>
+  <data name="KeyPlaceholder"><value>f.eks. Brreg:BaseUrl</value></data>
+  <data name="ValueLabel"><value>Verdi</value></data>
+  <data name="TypeLabel"><value>Type</value></data>
+  <data name="Cancel"><value>Avbryt</value></data>
+  <data name="Add"><value>Legg til</value></data>
+  <data name="ExportTitle"><value>Eksportert JSON</value></data>
+  <data name="ExportDescription"><value>Kopier teksten under og lagre i en fil for å flytte innstillinger til en annen enhet.</value></data>
+  <data name="Close"><value>Lukk</value></data>
+  <data name="ImportTitle"><value>Importer JSON</value></data>
+  <data name="ImportDescription"><value>Lim inn en eksportert payload. Eksisterende nøkler overskrives; ukjente nøkler beholdes.</value></data>
+  <data name="Saved"><value>Lagret {0}</value></data>
+  <data name="Deleted"><value>Slettet {0} — default fra appsettings.json gjelder nå</value></data>
+  <data name="KeyEmpty"><value>Nøkkel kan ikke være tom</value></data>
+  <data name="Added"><value>La til {0}</value></data>
+  <data name="ImportFailed"><value>Import feilet: {0}</value></data>
+  <data name="Imported"><value>Importert</value></data>
+  <data name="AllRemoved"><value>Alle innstillinger fjernet — bruker defaults fra appsettings.json</value></data>
+
+  <data name="UiCultureLabel"><value>Språk</value></data>
+  <data name="LanguageEnglish"><value>Engelsk</value></data>
+  <data name="LanguageNorwegianBokmal"><value>Norsk (bokmål)</value></data>
+  <data name="LanguageNorwegianNynorsk"><value>Norsk (nynorsk)</value></data>
+</root>

@@ -1,0 +1,296 @@
+@page "/"
+@page "/lookup"
+@using System.Globalization
+@inject CompanyLookupViewModel ViewModel
+@inject IStringLocalizer<SharedResources> L
+@inject NavigationManager Nav
+@implements IDisposable
+
+<PageTitle>@L["LookupTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <MudText Typo="Typo.h4" GutterBottom="true">@L["LookupTitle"]</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-6">
+        @L["LookupDescription"]
+    </MudText>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudRadioGroup T="bool" Value="@ViewModel.IsNameSearchMode" ValueChanged="OnSearchModeChanged" Class="mb-4">
+            <MudRadio T="bool" Value="@false">@L["SearchModeOrgNumber"]</MudRadio>
+            <MudRadio T="bool" Value="@true">@L["SearchModeName"]</MudRadio>
+        </MudRadioGroup>
+
+        @if (!ViewModel.IsNameSearchMode)
+        {
+            <MudTextField @bind-Value="ViewModel.OrgNumberInput"
+                          Label="@L["OrgNumberLabel"]"
+                          Placeholder="@L["OrgNumberPlaceholder"]"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          OnKeyDown="@OnOrgNumberKeyDown"
+                          Disabled="@ViewModel.IsBusy" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" FullWidth="true"
+                       Disabled="@ViewModel.IsBusy" OnClick="OnLookupClicked">
+                @if (ViewModel.IsBusy)
+                {
+                    <MudProgressCircular Color="Color.Inherit" Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>@L["Searching"]</span>
+                }
+                else
+                {
+                    <span>@L["SearchButton"]</span>
+                }
+            </MudButton>
+        }
+        else
+        {
+            <MudTextField @bind-Value="ViewModel.NameQueryInput"
+                          Label="@L["SearchByNameLabel"]"
+                          Placeholder="@L["SearchByNamePlaceholder"]"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          OnKeyDown="@OnNameKeyDown"
+                          Disabled="@ViewModel.IsBusy" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" FullWidth="true"
+                       Disabled="@ViewModel.IsBusy" OnClick="OnSearchClicked">
+                @if (ViewModel.IsBusy)
+                {
+                    <MudProgressCircular Color="Color.Inherit" Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>@L["Searching"]</span>
+                }
+                else
+                {
+                    <span>@L["SearchButtonName"]</span>
+                }
+            </MudButton>
+        }
+    </MudPaper>
+
+    @if (ViewModel.ErrorMessage is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4">@ViewModel.ErrorMessage</MudAlert>
+    }
+
+    @if (ViewModel.SearchHits.Count > 0)
+    {
+        <MudPaper Class="pa-4 mb-4" Elevation="2">
+            <MudTable Items="@ViewModel.SearchHits" Hover="true" Dense="true" OnRowClick="OnHitClicked" T="CompanySearchHit">
+                <HeaderContent>
+                    <MudTh>@L["OrgNumberLabel"]</MudTh>
+                    <MudTh>@L["CompanyNameCol"]</MudTh>
+                    <MudTh>@L["CompanyTypeCol", ""].Value.Replace(": ", "")</MudTh>
+                    <MudTh>@L["PostalCityCol"]</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="hit">
+                    <MudTd><code>@hit.OrganizationNumber</code></MudTd>
+                    <MudTd>@hit.Name</MudTd>
+                    <MudTd>@hit.OrganizationFormCode</MudTd>
+                    <MudTd>@hit.PostalCity</MudTd>
+                </RowTemplate>
+            </MudTable>
+            @if (ViewModel.SearchTotalElements > ViewModel.SearchHits.Count)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 d-block">
+                    @L["SearchPaginationHint", ViewModel.SearchHits.Count, ViewModel.SearchTotalElements]
+                </MudText>
+            }
+        </MudPaper>
+    }
+
+    @if (ViewModel.Found is { } found)
+    {
+        <MudPaper Class="pa-4 mb-3" Elevation="3">
+            <MudText Typo="Typo.h5" Class="mb-1">@found.OrganizationName</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                <code>@found.OrganizationNumber</code> · @found.CompanyType · @found.LanguageForm
+            </MudText>
+
+            @if (HasContact(found))
+            {
+                <MudText Typo="Typo.subtitle1" Class="mt-2 mb-1">@L["ContactSection"]</MudText>
+                <MudList T="string" Dense="true">
+                    @if (found.BusinessAddress is { } addr && FormatAddress(addr) is { } addrLine)
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.LocationOn"
+                                     Text="@($"{L["AddressLabel"]}: {addrLine}")" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(found.Website))
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Public"
+                                     Text="@($"{L["WebsiteLabel"]}: {found.Website}")" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(found.Email))
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Email"
+                                     Text="@($"{L["EmailLabel"]}: {found.Email}")" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(found.Phone))
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Phone"
+                                     Text="@($"{L["PhoneLabel"]}: {found.Phone}")" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(found.MobilePhone))
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.PhoneIphone"
+                                     Text="@($"{L["MobileLabel"]}: {found.MobilePhone}")" />
+                    }
+                </MudList>
+            }
+
+            @if (HasActivity(found))
+            {
+                <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">@L["ActivitySection"]</MudText>
+                <MudList T="string" Dense="true">
+                    @if (found.PrimaryIndustry is { } industry)
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Category"
+                                     Text="@($"{L["IndustryLabel"]}: {industry.Code} — {industry.Description}")" />
+                    }
+                    @if (found.EmployeeCount is { } emp)
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.People"
+                                     Text="@($"{L["EmployeesLabel"]}: {emp}")" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(found.SectorDescription))
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.AccountBalance"
+                                     Text="@($"{L["SectorLabel"]}: {found.SectorDescription}")" />
+                    }
+                </MudList>
+            }
+
+            @if (HasDates(found))
+            {
+                <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">@L["DatesSection"]</MudText>
+                <MudList T="string" Dense="true">
+                    @if (found.FoundingDate is { } founded)
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Cake"
+                                     Text="@($"{L["FoundingDateLabel"]}: {founded.ToString("d", CultureInfo.CurrentUICulture)}")" />
+                    }
+                    @if (found.RegisteredDate is { } reg)
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.HowToReg"
+                                     Text="@($"{L["RegisteredDateLabel"]}: {reg.ToString("d", CultureInfo.CurrentUICulture)}")" />
+                    }
+                    @if (found.RegisteredInVatRegistry is { } vat)
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Receipt"
+                                     Text="@($"{L["VatRegistryLabel"]}: {(vat ? L["YesValue"] : L["NoValue"])}")" />
+                    }
+                    @if (found.RegisteredInBusinessRegistry is { } biz)
+                    {
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Business"
+                                     Text="@($"{L["BusinessRegistryLabel"]}: {(biz ? L["YesValue"] : L["NoValue"])}")" />
+                    }
+                </MudList>
+            }
+
+            @if (ViewModel.StatusMessage is not null)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Success" Class="mt-3 d-block">
+                    @ViewModel.StatusMessage
+                </MudText>
+            }
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        ViewModel.PropertyChanged += OnViewModelChanged;
+
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var orgnr = query["orgnr"];
+        var name = query["name"];
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            ViewModel.IsNameSearchMode = true;
+            ViewModel.NameQueryInput = name;
+            await ViewModel.SearchByNameAsync(CancellationToken.None);
+        }
+        else if (!string.IsNullOrWhiteSpace(orgnr))
+        {
+            ViewModel.OrgNumberInput = orgnr;
+            await ViewModel.LookupAsync(CancellationToken.None);
+        }
+    }
+
+    private void OnViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
+
+    private void OnSearchModeChanged(bool isNameMode)
+    {
+        ViewModel.IsNameSearchMode = isNameMode;
+        ViewModel.ErrorMessage = null;
+        ViewModel.SearchHits = [];
+        ViewModel.SearchTotalElements = 0;
+        ViewModel.Found = null;
+    }
+
+    private async Task OnLookupClicked() => await ViewModel.LookupAsync(CancellationToken.None);
+
+    private async Task OnSearchClicked() => await ViewModel.SearchByNameAsync(CancellationToken.None);
+
+    private async Task OnOrgNumberKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !ViewModel.IsBusy)
+        {
+            await ViewModel.LookupAsync(CancellationToken.None);
+        }
+    }
+
+    private async Task OnNameKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !ViewModel.IsBusy)
+        {
+            await ViewModel.SearchByNameAsync(CancellationToken.None);
+        }
+    }
+
+    private async Task OnHitClicked(TableRowClickEventArgs<CompanySearchHit> args)
+    {
+        if (args.Item is not null)
+        {
+            await ViewModel.SelectHitAsync(args.Item, CancellationToken.None);
+        }
+    }
+
+    private static bool HasContact(CompanyResponse c) =>
+        c.BusinessAddress is not null
+        || !string.IsNullOrWhiteSpace(c.Website)
+        || !string.IsNullOrWhiteSpace(c.Email)
+        || !string.IsNullOrWhiteSpace(c.Phone)
+        || !string.IsNullOrWhiteSpace(c.MobilePhone);
+
+    private static bool HasActivity(CompanyResponse c) =>
+        c.PrimaryIndustry is not null
+        || c.EmployeeCount is not null
+        || !string.IsNullOrWhiteSpace(c.SectorDescription);
+
+    private static bool HasDates(CompanyResponse c) =>
+        c.FoundingDate is not null
+        || c.RegisteredDate is not null
+        || c.RegisteredInVatRegistry is not null
+        || c.RegisteredInBusinessRegistry is not null;
+
+    private static string? FormatAddress(PostalAddress a)
+    {
+        var parts = new[]
+        {
+            a.StreetAddress,
+            string.Join(" ", new[] { a.PostalCode, a.City }.Where(p => !string.IsNullOrWhiteSpace(p))),
+            a.Country,
+        }.Where(p => !string.IsNullOrWhiteSpace(p));
+        var joined = string.Join(", ", parts);
+        return string.IsNullOrWhiteSpace(joined) ? null : joined;
+    }
+
+    public void Dispose()
+    {
+        ViewModel.PropertyChanged -= OnViewModelChanged;
+    }
+}
