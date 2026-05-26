@@ -35,6 +35,9 @@ RUN dotnet publish src/Bronnoysund.Lookup.BlazorWeb/Bronnoysund.Lookup.BlazorWeb
 # Slim runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 
+# icu-libs + tzdata so CultureInfo("en"/"nb-NO"/"nn-NO") works (Alpine ships globalization-invariant by default).
+RUN apk add --no-cache icu-libs tzdata
+
 # Do not run as root
 RUN adduser -D -u 10001 appuser
 WORKDIR /app
@@ -45,6 +48,7 @@ USER appuser
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 ENV DOTNET_PRINT_TELEMETRY_MESSAGE=false
 
 ENTRYPOINT ["dotnet", "Bronnoysund.Lookup.BlazorWeb.dll"]
