@@ -78,6 +78,20 @@ public class OrganizationNumberTests
         error.Should().Contain("MOD11");
     }
 
+    [Theory]
+    [InlineData("800000050")] // 8·3 + 0·2 + 0·7 + 0·6 + 0·5 + 0·4 + 0·3 + 5·2 = 34, 34 % 11 = 1
+    [InlineData("800000053")] // same 8-digit prefix; any check digit is invalid when remainder is 1
+    [InlineData("800000059")]
+    public void TryCreate_Mod11RemainderEqualsOne_ReturnsFalse(string raw)
+    {
+        // The MOD11 algorithm rejects any orgnr whose first 8 weighted digits sum to a
+        // remainder of 1 modulo 11 — the check digit would have been 10, which has no
+        // single-digit representation. This branch (OrganizationNumber.cs IsValidMod11 → return false)
+        // is otherwise impossible to exercise from "wrong check digit" inputs.
+        OrganizationNumber.TryCreate(raw, out _, out var error).Should().BeFalse();
+        error.Should().Contain("MOD11");
+    }
+
     [Fact]
     public void Create_InvalidInput_Throws()
     {
