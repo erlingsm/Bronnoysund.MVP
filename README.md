@@ -21,7 +21,7 @@ name-search extension.
 - **Polly v8** (`Microsoft.Extensions.Http.Resilience`) for retry / circuit-breaker / timeout
 - **HybridCache** for in-process cache with 24 h TTL
 - **Serilog** for structured logging (console + rolling file)
-- **xUnit + FluentAssertions + NSubstitute + WireMock.Net** for testing
+- **MSTest + FluentAssertions + NSubstitute + WireMock.Net** for testing
 
 ## Run locally
 

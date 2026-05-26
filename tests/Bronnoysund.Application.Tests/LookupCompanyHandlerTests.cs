@@ -8,21 +8,23 @@ using Bronnoysund.Domain;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
-using Xunit;
 
 namespace Bronnoysund.Application.Tests;
 
+[TestClass]
 public class LookupCompanyHandlerTests
 {
-    private readonly ICompanyProvider _provider = Substitute.For<ICompanyProvider>();
-    private readonly LookupCompanyHandler _sut;
+    private ICompanyProvider _provider = null!;
+    private LookupCompanyHandler _sut = null!;
 
-    public LookupCompanyHandlerTests()
+    [TestInitialize]
+    public void Setup()
     {
+        _provider = Substitute.For<ICompanyProvider>();
         _sut = new LookupCompanyHandler(_provider, NullLogger<LookupCompanyHandler>.Instance);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task ValidOrgNumber_CallsProvider_AndReturnsFound()
     {
         var expected = new CompanyResponse("919300388", "Equinor ASA", "AS", "Bokmål");
@@ -35,7 +37,7 @@ public class LookupCompanyHandlerTests
             .Which.Company.Should().Be(expected);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task InvalidOrgNumber_ReturnsInvalidInput_WithoutCallingProvider()
     {
         var result = await _sut.HandleAsync(new LookupCompanyQuery("12345"), CancellationToken.None);
@@ -44,7 +46,7 @@ public class LookupCompanyHandlerTests
         await _provider.DidNotReceive().LookupAsync(Arg.Any<OrganizationNumber>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [TestMethod]
     public async Task EmptyInput_ReturnsInvalidInput()
     {
         var result = await _sut.HandleAsync(new LookupCompanyQuery(""), CancellationToken.None);
@@ -52,7 +54,7 @@ public class LookupCompanyHandlerTests
         result.Should().BeOfType<CompanyLookupResult.InvalidInput>();
     }
 
-    [Fact]
+    [TestMethod]
     public async Task ValidOrgNumberButProviderReturnsNotFound_PropagatesNotFound()
     {
         _provider.LookupAsync(Arg.Any<OrganizationNumber>(), Arg.Any<CancellationToken>())
@@ -64,7 +66,7 @@ public class LookupCompanyHandlerTests
             .Which.OrganizationNumber.Should().Be("919300388");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task ValidOrgNumberButProviderReturnsUnavailable_PropagatesUnavailable()
     {
         _provider.LookupAsync(Arg.Any<OrganizationNumber>(), Arg.Any<CancellationToken>())

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Localization;
 namespace Bronnoysund.ViewModels.Tests;
 
 /// <summary>Verify that localized strings flow through the view-model and switch with CurrentUICulture.</summary>
+[TestClass]
 public sealed class CompanyLookupViewModelTests
 {
     private static IStringLocalizer<SharedResources> NewLocalizer()
@@ -20,7 +21,7 @@ public sealed class CompanyLookupViewModelTests
         return sp.GetRequiredService<IStringLocalizer<SharedResources>>();
     }
 
-    [Fact]
+    [TestMethod]
     public void Localizer_returns_english_by_default()
     {
         var prev = CultureInfo.CurrentUICulture;
@@ -33,7 +34,7 @@ public sealed class CompanyLookupViewModelTests
         finally { CultureInfo.CurrentUICulture = prev; }
     }
 
-    [Fact]
+    [TestMethod]
     public void Localizer_returns_bokmal_when_culture_set()
     {
         var prev = CultureInfo.CurrentUICulture;
@@ -46,7 +47,7 @@ public sealed class CompanyLookupViewModelTests
         finally { CultureInfo.CurrentUICulture = prev; }
     }
 
-    [Fact]
+    [TestMethod]
     public void Localizer_returns_nynorsk_when_culture_set()
     {
         var prev = CultureInfo.CurrentUICulture;
@@ -59,7 +60,7 @@ public sealed class CompanyLookupViewModelTests
         finally { CultureInfo.CurrentUICulture = prev; }
     }
 
-    [Fact]
+    [TestMethod]
     public void Localizer_formats_with_arguments()
     {
         var prev = CultureInfo.CurrentUICulture;

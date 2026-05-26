@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
-using Xunit;
 
 namespace Bronnoysund.Infrastructure.Tests;
 
@@ -18,14 +17,16 @@ namespace Bronnoysund.Infrastructure.Tests;
 /// flags, bankruptcy. The integration test above covers HTTP status handling; this one isolates
 /// the mapping logic so a Brreg-side schema change shows up here first.
 /// </summary>
+[TestClass]
 public class BrregCompanyProviderMappingTests : IDisposable
 {
-    private readonly WireMockServer _wireMock;
-    private readonly HttpClient _httpClient;
-    private readonly BrregCompanyProvider _sut;
+    private WireMockServer _wireMock = null!;
+    private HttpClient _httpClient = null!;
+    private BrregCompanyProvider _sut = null!;
     private static readonly OrganizationNumber Riksrevisjonen = OrganizationNumber.Create("974760843");
 
-    public BrregCompanyProviderMappingTests()
+    [TestInitialize]
+    public void Setup()
     {
         _wireMock = WireMockServer.Start();
         _httpClient = new HttpClient { BaseAddress = new Uri(_wireMock.Url!) };
@@ -33,7 +34,15 @@ public class BrregCompanyProviderMappingTests : IDisposable
         _sut = new BrregCompanyProvider(brreg, NullLogger<BrregCompanyProvider>.Instance);
     }
 
-    [Fact]
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+        _wireMock?.Stop();
+        _wireMock?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    [TestMethod]
     public async Task FullPayload_MapsEveryOpenField()
     {
         const string body = """
@@ -116,7 +125,7 @@ public class BrregCompanyProviderMappingTests : IDisposable
         company.DeletedDate.Should().BeNull();
     }
 
-    [Fact]
+    [TestMethod]
     public async Task MinimalPayload_AllOptionalFieldsAreNull()
     {
         // What Brreg returns for a brand-new entity: just core fields, optional ones absent.
@@ -144,7 +153,7 @@ public class BrregCompanyProviderMappingTests : IDisposable
         company.IsBankrupt.Should().BeFalse();
     }
 
-    [Fact]
+    [TestMethod]
     public async Task DtoMissingCriticalFields_ReturnsUnavailable()
     {
         // Brreg responded 200 but the payload is missing essential fields (here: `navn`).
@@ -167,7 +176,7 @@ public class BrregCompanyProviderMappingTests : IDisposable
             .Which.Message.Should().Contain("unexpected");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task EmployeeCount_IsNullWhenNotRegistered()
     {
         // Brreg returns antallAnsatte=0 with harRegistrertAntallAnsatte=false for entities that
@@ -191,13 +200,5 @@ public class BrregCompanyProviderMappingTests : IDisposable
         var result = await _sut.LookupAsync(OrganizationNumber.Create("919300388"), CancellationToken.None);
 
         result.Should().BeOfType<CompanyLookupResult.Found>().Which.Company.EmployeeCount.Should().BeNull();
-    }
-
-    public void Dispose()
-    {
-        _httpClient.Dispose();
-        _wireMock.Stop();
-        _wireMock.Dispose();
-        GC.SuppressFinalize(this);
     }
 }

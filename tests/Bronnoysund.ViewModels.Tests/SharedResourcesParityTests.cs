@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-using System.Reflection;
 using System.Xml.Linq;
 using Bronnoysund.ViewModels.Resources;
 using FluentAssertions;
@@ -8,6 +7,7 @@ using FluentAssertions;
 namespace Bronnoysund.ViewModels.Tests;
 
 /// <summary>Catches forgotten translations: every key in the default .resx must exist in nb-NO and nn-NO.</summary>
+[TestClass]
 public sealed class SharedResourcesParityTests
 {
     private static readonly Lazy<string> ResourcesDir = new(() =>
@@ -21,9 +21,9 @@ public sealed class SharedResourcesParityTests
         return Path.Combine(current.FullName, "src", "Bronnoysund.ViewModels", "Resources");
     });
 
-    [Theory]
-    [InlineData("nb-NO")]
-    [InlineData("nn-NO")]
+    [TestMethod]
+    [DataRow("nb-NO")]
+    [DataRow("nn-NO")]
     public void Culture_resx_has_every_key_from_default(string culture)
     {
         var defaultKeys = LoadKeys(Path.Combine(ResourcesDir.Value, "SharedResources.resx"));
@@ -33,9 +33,9 @@ public sealed class SharedResourcesParityTests
         missing.Should().BeEmpty($"these keys are not translated in {culture}: {string.Join(", ", missing)}");
     }
 
-    [Theory]
-    [InlineData("nb-NO")]
-    [InlineData("nn-NO")]
+    [TestMethod]
+    [DataRow("nb-NO")]
+    [DataRow("nn-NO")]
     public void Culture_resx_does_not_have_extra_keys(string culture)
     {
         var defaultKeys = LoadKeys(Path.Combine(ResourcesDir.Value, "SharedResources.resx"));

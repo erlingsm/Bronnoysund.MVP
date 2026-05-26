@@ -5,21 +5,23 @@ using Bronnoysund.Application.UseCases.SearchCompaniesByName;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
-using Xunit;
 
 namespace Bronnoysund.Application.Tests;
 
+[TestClass]
 public class SearchCompaniesByNameHandlerTests
 {
-    private readonly ICompanySearchProvider _provider = Substitute.For<ICompanySearchProvider>();
-    private readonly SearchCompaniesByNameHandler _sut;
+    private ICompanySearchProvider _provider = null!;
+    private SearchCompaniesByNameHandler _sut = null!;
 
-    public SearchCompaniesByNameHandlerTests()
+    [TestInitialize]
+    public void Setup()
     {
+        _provider = Substitute.For<ICompanySearchProvider>();
         _sut = new SearchCompaniesByNameHandler(_provider, NullLogger<SearchCompaniesByNameHandler>.Instance);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task ValidQuery_CallsProvider_AndReturnsFound()
     {
         var expected = new CompanySearchResult(
@@ -34,11 +36,11 @@ public class SearchCompaniesByNameHandlerTests
             .Which.Result.Should().Be(expected);
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
-    [InlineData("a")]
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("   ")]
+    [DataRow(null)]
+    [DataRow("a")]
     public async Task ShortOrEmptyQuery_ReturnsInvalidInput_WithoutCallingProvider(string? raw)
     {
         var result = await _sut.HandleAsync(new SearchCompaniesByNameQuery(raw), CancellationToken.None);
@@ -48,7 +50,7 @@ public class SearchCompaniesByNameHandlerTests
         await _provider.DidNotReceive().SearchByNameAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [TestMethod]
     public async Task QueryGetsTrimmedBeforePassingToProvider()
     {
         _provider.SearchByNameAsync("Statens vegvesen", Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -59,11 +61,11 @@ public class SearchCompaniesByNameHandlerTests
         await _provider.Received(1).SearchByNameAsync("Statens vegvesen", Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
-    [Theory]
-    [InlineData(0, 1)]      // zero requested → clamped up to 1
-    [InlineData(-5, 1)]     // negative requested → clamped up to 1
-    [InlineData(50, 50)]    // in range → passed through
-    [InlineData(1000, 100)] // huge requested → clamped down to 100
+    [TestMethod]
+    [DataRow(0, 1)]      // zero requested → clamped up to 1
+    [DataRow(-5, 1)]     // negative requested → clamped up to 1
+    [DataRow(50, 50)]    // in range → passed through
+    [DataRow(1000, 100)] // huge requested → clamped down to 100
     public async Task MaxResults_IsClampedToValidRange(int requested, int expected)
     {
         _provider.SearchByNameAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -74,7 +76,7 @@ public class SearchCompaniesByNameHandlerTests
         await _provider.Received(1).SearchByNameAsync("Equinor", expected, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [TestMethod]
     public async Task ProviderThrows_ReturnsUnavailable()
     {
         _provider.SearchByNameAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -86,7 +88,7 @@ public class SearchCompaniesByNameHandlerTests
             .Which.Message.Should().Contain("Brreg is down");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task CancellationException_IsNotCaughtAsUnavailable()
     {
         // OperationCanceledException should propagate so the caller can distinguish "user cancelled"

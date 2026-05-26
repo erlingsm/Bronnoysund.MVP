@@ -4,7 +4,6 @@ using Bronnoysund.Application.Dtos;
 using Bronnoysund.Application.Results;
 using Bronnoysund.Infrastructure.Caching;
 using FluentAssertions;
-using Xunit;
 
 namespace Bronnoysund.Infrastructure.Tests;
 
@@ -14,9 +13,10 @@ namespace Bronnoysund.Infrastructure.Tests;
 /// Catches regressions when adding new result subtypes to the union — if a new case is
 /// added without updating the cache layer, From/ToResult will silently drop it.
 /// </summary>
+[TestClass]
 public class CachingCompanyProviderTests
 {
-    [Fact]
+    [TestMethod]
     public void RoundTrip_Found_PreservesCompanyResponse()
     {
         var company = new CompanyResponse(
@@ -32,7 +32,7 @@ public class CachingCompanyProviderTests
             .Which.Company.Should().BeEquivalentTo(company);
     }
 
-    [Fact]
+    [TestMethod]
     public void RoundTrip_NotFound_PreservesOrgNumber()
     {
         var original = new CompanyLookupResult.NotFound("919300389");
@@ -43,7 +43,7 @@ public class CachingCompanyProviderTests
             .Which.OrganizationNumber.Should().Be("919300389");
     }
 
-    [Fact]
+    [TestMethod]
     public void RoundTrip_Unavailable_PreservesMessage()
     {
         var original = new CompanyLookupResult.Unavailable("Brreg timed out after 10 seconds");
@@ -54,7 +54,7 @@ public class CachingCompanyProviderTests
             .Which.Message.Should().Be("Brreg timed out after 10 seconds");
     }
 
-    [Fact]
+    [TestMethod]
     public void ToResult_EmptyCachedLookup_Throws()
     {
         var empty = new CachedLookup(null, null, null);

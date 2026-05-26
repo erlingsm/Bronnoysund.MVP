@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-using System.Net;
 using Bronnoysund.Domain;
 using Bronnoysund.Infrastructure.Brreg;
 using Bronnoysund.Infrastructure.Exceptions;
@@ -9,7 +8,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
-using Xunit;
 
 namespace Bronnoysund.Infrastructure.Tests;
 
@@ -17,21 +15,31 @@ namespace Bronnoysund.Infrastructure.Tests;
 /// Integration tests for BrregHttpClient that verify HTTP handling without hitting
 /// the real Brreg service. WireMock.Net mocks the /enheter/{orgnr} response.
 /// </summary>
+[TestClass]
 public class BrregHttpClientIntegrationTests : IDisposable
 {
-    private readonly WireMockServer _wireMock;
-    private readonly HttpClient _httpClient;
-    private readonly BrregHttpClient _sut;
+    private WireMockServer _wireMock = null!;
+    private HttpClient _httpClient = null!;
+    private BrregHttpClient _sut = null!;
     private static readonly OrganizationNumber Equinor = OrganizationNumber.Create("919300388");
 
-    public BrregHttpClientIntegrationTests()
+    [TestInitialize]
+    public void Setup()
     {
         _wireMock = WireMockServer.Start();
         _httpClient = new HttpClient { BaseAddress = new Uri(_wireMock.Url!) };
         _sut = new BrregHttpClient(_httpClient, NullLogger<BrregHttpClient>.Instance);
     }
 
-    [Fact]
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+        _wireMock?.Stop();
+        _wireMock?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    [TestMethod]
     public async Task Status200WithJson_ReturnsDto()
     {
         const string body = """
@@ -55,7 +63,7 @@ public class BrregHttpClientIntegrationTests : IDisposable
         dto.Organisasjonsform!.Kode.Should().Be("AS");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task Status404_ReturnsNull()
     {
         _wireMock.Given(Request.Create().WithPath("/enheter/919300388").UsingGet())
@@ -66,7 +74,7 @@ public class BrregHttpClientIntegrationTests : IDisposable
         dto.Should().BeNull();
     }
 
-    [Fact]
+    [TestMethod]
     public async Task Status410Gone_ReturnsNull()
     {
         _wireMock.Given(Request.Create().WithPath("/enheter/919300388").UsingGet())
@@ -77,7 +85,7 @@ public class BrregHttpClientIntegrationTests : IDisposable
         dto.Should().BeNull();
     }
 
-    [Fact]
+    [TestMethod]
     public async Task Status500_ThrowsBrregUnavailable()
     {
         _wireMock.Given(Request.Create().WithPath("/enheter/919300388").UsingGet())
@@ -88,7 +96,7 @@ public class BrregHttpClientIntegrationTests : IDisposable
         await act.Should().ThrowAsync<BrregUnavailableException>();
     }
 
-    [Fact]
+    [TestMethod]
     public async Task DtoMappingToDomain_WorksForBokmal()
     {
         var dto = new BrregEnhetDto
@@ -106,13 +114,5 @@ public class BrregHttpClientIntegrationTests : IDisposable
         company.Name.Should().Be("Equinor ASA");
         company.OrganizationFormCode.Should().Be("AS");
         company.LanguageForm.Should().Be(LanguageForm.Bokmål);
-    }
-
-    public void Dispose()
-    {
-        _httpClient.Dispose();
-        _wireMock.Stop();
-        _wireMock.Dispose();
-        GC.SuppressFinalize(this);
     }
 }

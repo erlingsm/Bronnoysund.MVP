@@ -6,17 +6,18 @@ using Microsoft.Extensions.Logging.Abstractions;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
-using Xunit;
 
 namespace Bronnoysund.Infrastructure.Tests;
 
+[TestClass]
 public class BrregCompanySearchProviderTests : IDisposable
 {
-    private readonly WireMockServer _wireMock;
-    private readonly HttpClient _httpClient;
-    private readonly BrregCompanySearchProvider _sut;
+    private WireMockServer _wireMock = null!;
+    private HttpClient _httpClient = null!;
+    private BrregCompanySearchProvider _sut = null!;
 
-    public BrregCompanySearchProviderTests()
+    [TestInitialize]
+    public void Setup()
     {
         _wireMock = WireMockServer.Start();
         _httpClient = new HttpClient { BaseAddress = new Uri(_wireMock.Url!) };
@@ -24,7 +25,15 @@ public class BrregCompanySearchProviderTests : IDisposable
         _sut = new BrregCompanySearchProvider(brreg, NullLogger<BrregCompanySearchProvider>.Instance);
     }
 
-    [Fact]
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+        _wireMock?.Stop();
+        _wireMock?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    [TestMethod]
     public async Task SearchByNameAsync_MapsEmbeddedHits()
     {
         const string body = """
@@ -62,7 +71,7 @@ public class BrregCompanySearchProviderTests : IDisposable
         result.TotalElements.Should().Be(142);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task SearchByNameAsync_EmptyEmbedded_ReturnsEmptyHits()
     {
         const string body = """{"_embedded": {"enheter": []}, "page": {"totalElements": 0}}""";
@@ -76,7 +85,7 @@ public class BrregCompanySearchProviderTests : IDisposable
         result.TotalElements.Should().Be(0);
     }
 
-    [Fact]
+    [TestMethod]
     public async Task SearchByNameAsync_HandlesNorwegianCharactersInQuery()
     {
         // Verify the provider URL-encodes Norwegian characters; without this Brreg would
@@ -97,7 +106,7 @@ public class BrregCompanySearchProviderTests : IDisposable
         result.Hits[0].Name.Should().Be("RØA ALLIANSEIDRETTSLAG");
     }
 
-    [Fact]
+    [TestMethod]
     public async Task SearchByNameAsync_SkipsHitsWithoutOrgNumber()
     {
         // Brreg has never been seen to return an entity without orgnr, but the DTO field
@@ -120,13 +129,5 @@ public class BrregCompanySearchProviderTests : IDisposable
 
         result.Hits.Should().HaveCount(1);
         result.Hits[0].Name.Should().Be("REAL");
-    }
-
-    public void Dispose()
-    {
-        _httpClient.Dispose();
-        _wireMock.Stop();
-        _wireMock.Dispose();
-        GC.SuppressFinalize(this);
     }
 }
