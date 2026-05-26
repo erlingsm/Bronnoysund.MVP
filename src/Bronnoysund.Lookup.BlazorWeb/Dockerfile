@@ -19,9 +19,7 @@ COPY src/Bronnoysund.Lookup.ViewModels/Bronnoysund.Lookup.ViewModels.csproj     
 COPY src/Bronnoysund.Lookup.Components/Bronnoysund.Lookup.Components.csproj         src/Bronnoysund.Lookup.Components/
 COPY src/Bronnoysund.Lookup.BlazorWeb/Bronnoysund.Lookup.BlazorWeb.csproj           src/Bronnoysund.Lookup.BlazorWeb/
 
-RUN dotnet restore src/Bronnoysund.Lookup.BlazorWeb/Bronnoysund.Lookup.BlazorWeb.csproj
-
-# Copy all source and build
+# Copy all source first, then restore+publish in one step (more reliable for multi-project graphs)
 COPY src/Bronnoysund.Lookup.Domain/         src/Bronnoysund.Lookup.Domain/
 COPY src/Bronnoysund.Lookup.Application/    src/Bronnoysund.Lookup.Application/
 COPY src/Bronnoysund.Lookup.Infrastructure/ src/Bronnoysund.Lookup.Infrastructure/
@@ -32,7 +30,6 @@ COPY src/Bronnoysund.Lookup.BlazorWeb/      src/Bronnoysund.Lookup.BlazorWeb/
 RUN dotnet publish src/Bronnoysund.Lookup.BlazorWeb/Bronnoysund.Lookup.BlazorWeb.csproj \
     -c Release \
     -o /app/publish \
-    --no-restore \
     /p:UseAppHost=false
 
 # Slim runtime image
