@@ -6,6 +6,8 @@ Enhetsregisteret and returns a simplified English response. Includes a Blazor
 Server web frontend with English / Bokmål / Nynorsk language switching and a
 name-search extension.
 
+**Live demo:** <https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io>
+
 > Sister project (full product family — MAUI Desktop, MAUI Mobile, Azure
 > Container Apps, multi-registry aggregator, persistence, watch apps):
 > <https://github.com/erlingsm/Bronnoysund.Lookup>
@@ -124,17 +126,29 @@ session state, no JS interop — pure ASP.NET Core primitives.
 
 ## Deploy
 
-Self-contained `dotnet publish` produces a portable bundle for any host with
-.NET 10 (or a self-contained variant for hosts without it). Validated on:
+The live demo runs on **Azure Container Apps** (region `norwayeast`):
 
-- **Azure App Service Linux** (recommended for demo — WebSocket out-of-the-box,
-  auto-TLS, always-on). Deploy with `az webapp deploy`.
+```bash
+# Build image to ACR (no Docker daemon required locally)
+az acr build --registry <acrName> --image bronnoysund-mvp:latest \
+    --file src/Bronnoysund.Lookup.BlazorWeb/Dockerfile .
+
+# Deploy to Container App
+az containerapp update --name bronnoysund-mvp -g bronnoysund-mvp-rg \
+    --image <acrName>.azurecr.io/bronnoysund-mvp:latest
+```
+
+The architecture is host-agnostic. Other validated targets:
+
+- **Azure App Service Linux** with `az webapp deploy` (when subscription
+  quota allows VM-backed plans)
 - **Any Linux distro with glibc 2.31+** (Ubuntu 22.04/24.04, Debian 11/12,
-  RHEL 9/10) behind Nginx 1.22 or Apache 2.4 as a reverse proxy. Requires
-  WebSocket upgrade headers for Blazor Server SignalR.
+  RHEL 9/10) behind Nginx 1.22 or Apache 2.4 as a reverse proxy — requires
+  WebSocket upgrade headers for Blazor Server SignalR
+- **Local `dotnet run`** for development
 
-The architecture is host-agnostic; the Application and Infrastructure layers
-have zero dependencies on any specific runtime.
+The Application and Infrastructure layers have zero dependencies on any
+specific runtime.
 
 ## Credits
 
