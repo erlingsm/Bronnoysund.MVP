@@ -87,28 +87,23 @@
                 <MudList T="string" Dense="true">
                     @if (found.BusinessAddress is { } addr && FormatAddress(addr) is { } addrLine)
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.LocationOn"
-                                     Text="@($"{L["AddressLabel"]}: {addrLine}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.LocationOn" Text="@($"{L["AddressLabel"]}: {addrLine}")" />
                     }
                     @if (!string.IsNullOrWhiteSpace(found.Website))
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Public"
-                                     Text="@($"{L["WebsiteLabel"]}: {found.Website}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Public" Text="@($"{L["WebsiteLabel"]}: {found.Website}")" />
                     }
                     @if (!string.IsNullOrWhiteSpace(found.Email))
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Email"
-                                     Text="@($"{L["EmailLabel"]}: {found.Email}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Email" Text="@($"{L["EmailLabel"]}: {found.Email}")" />
                     }
                     @if (!string.IsNullOrWhiteSpace(found.Phone))
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Phone"
-                                     Text="@($"{L["PhoneLabel"]}: {found.Phone}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Phone" Text="@($"{L["PhoneLabel"]}: {found.Phone}")" />
                     }
                     @if (!string.IsNullOrWhiteSpace(found.MobilePhone))
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.PhoneIphone"
-                                     Text="@($"{L["MobileLabel"]}: {found.MobilePhone}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.PhoneIphone" Text="@($"{L["MobileLabel"]}: {found.MobilePhone}")" />
                     }
                 </MudList>
             }
@@ -119,18 +114,15 @@
                 <MudList T="string" Dense="true">
                     @if (found.PrimaryIndustry is { } industry)
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Category"
-                                     Text="@($"{L["IndustryLabel"]}: {industry.Code} — {industry.Description}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Category" Text="@($"{L["IndustryLabel"]}: {industry.Code} — {industry.Description}")" />
                     }
                     @if (found.EmployeeCount is { } emp)
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.People"
-                                     Text="@($"{L["EmployeesLabel"]}: {emp}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.People" Text="@($"{L["EmployeesLabel"]}: {emp}")" />
                     }
                     @if (!string.IsNullOrWhiteSpace(found.SectorDescription))
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.AccountBalance"
-                                     Text="@($"{L["SectorLabel"]}: {found.SectorDescription}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.AccountBalance" Text="@($"{L["SectorLabel"]}: {found.SectorDescription}")" />
                     }
                 </MudList>
             }
@@ -141,23 +133,19 @@
                 <MudList T="string" Dense="true">
                     @if (found.FoundingDate is { } founded)
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Cake"
-                                     Text="@($"{L["FoundingDateLabel"]}: {founded.ToString("d", CultureInfo.CurrentUICulture)}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Cake" Text="@($"{L["FoundingDateLabel"]}: {founded.ToString("d", CultureInfo.CurrentUICulture)}")" />
                     }
                     @if (found.RegisteredDate is { } reg)
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.HowToReg"
-                                     Text="@($"{L["RegisteredDateLabel"]}: {reg.ToString("d", CultureInfo.CurrentUICulture)}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.HowToReg" Text="@($"{L["RegisteredDateLabel"]}: {reg.ToString("d", CultureInfo.CurrentUICulture)}")" />
                     }
                     @if (found.RegisteredInVatRegistry is { } vat)
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Receipt"
-                                     Text="@($"{L["VatRegistryLabel"]}: {(vat ? L["YesValue"] : L["NoValue"])}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Receipt" Text="@($"{L["VatRegistryLabel"]}: {(vat ? L["YesValue"] : L["NoValue"])}")" />
                     }
                     @if (found.RegisteredInBusinessRegistry is { } biz)
                     {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Business"
-                                     Text="@($"{L["BusinessRegistryLabel"]}: {(biz ? L["YesValue"] : L["NoValue"])}")" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Business" Text="@($"{L["BusinessRegistryLabel"]}: {(biz ? L["YesValue"] : L["NoValue"])}")" />
                     }
                 </MudList>
             }
@@ -194,11 +182,28 @@
                     <MudTd>@hit.PostalCity</MudTd>
                 </RowTemplate>
             </MudTable>
-            @if (ViewModel.SearchTotalElements > ViewModel.SearchHits.Count)
+            @if (ViewModel.SearchTotalElements > 0)
             {
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2 d-block">
-                    @L["SearchPaginationHint", ViewModel.SearchHits.Count, ViewModel.SearchTotalElements]
-                </MudText>
+                <div class="d-flex flex-wrap justify-space-between align-center gap-3 mt-3">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        @L["PaginationInfo", ViewModel.CurrentPage + 1, ViewModel.TotalPages, ViewModel.SearchTotalElements]
+                    </MudText>
+                    @if (ViewModel.TotalPages > 1)
+                    {
+                        <MudPagination Count="@ViewModel.TotalPages"
+                                       Selected="@(ViewModel.CurrentPage + 1)"
+                                       SelectedChanged="OnPageChanged"
+                                       Disabled="@ViewModel.IsBusy" />
+                    }
+                    <MudSelect T="int" Value="@ViewModel.PageSize" ValueChanged="OnPageSizeChanged"
+                               Label="@L["PageSizeLabel"]" Variant="Variant.Outlined" Dense="true"
+                               Disabled="@ViewModel.IsBusy" Style="max-width: 140px;">
+                        <MudSelectItem T="int" Value="10">10</MudSelectItem>
+                        <MudSelectItem T="int" Value="25">25</MudSelectItem>
+                        <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                        <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                    </MudSelect>
+                </div>
             }
         </MudPaper>
     }
@@ -271,6 +276,13 @@
             await ViewModel.SelectHitAsync(args.Item, _cts.Token);
         }
     }
+
+    // MudPagination is 1-indexed; the view-model is 0-indexed (matching Brreg's wire format).
+    private async Task OnPageChanged(int newOneIndexedPage)
+        => await ViewModel.GoToPageAsync(newOneIndexedPage - 1, _cts.Token);
+
+    private async Task OnPageSizeChanged(int newPageSize)
+        => await ViewModel.ChangePageSizeAsync(newPageSize, _cts.Token);
 
     private static bool HasContact(CompanyResponse c) =>
         c.BusinessAddress is not null

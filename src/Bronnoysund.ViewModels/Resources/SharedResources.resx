@@ -53,7 +53,8 @@
   <data name="CompanyNameCol"><value>Name</value></data>
   <data name="CompanyTypeColHeader"><value>Type</value></data>
   <data name="PostalCityCol"><value>City</value></data>
-  <data name="SearchPaginationHint"><value>Showing {0} of {1} hits — refine the search to narrow results.</value></data>
+  <data name="PageSizeLabel"><value>Hits per page</value></data>
+  <data name="PaginationInfo"><value>Page {0} of {1} · {2} hits total</value></data>
   <data name="NoHitsForName"><value>No companies found matching this name.</value></data>
   <data name="OtherHitsHeader"><value>Other search hits</value></data>
 

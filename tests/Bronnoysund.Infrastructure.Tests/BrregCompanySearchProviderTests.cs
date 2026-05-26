@@ -61,7 +61,7 @@ public class BrregCompanySearchProviderTests : IDisposable
             .RespondWith(Response.Create().WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json").WithBody(body));
 
-        var result = await _sut.SearchByNameAsync("Statens vegvesen", 20, CancellationToken.None);
+        var result = await _sut.SearchByNameAsync("Statens vegvesen", 20, 0, CancellationToken.None);
 
         result.Hits.Should().HaveCount(2);
         result.Hits[0].OrganizationNumber.Should().Be("971032081");
@@ -79,7 +79,7 @@ public class BrregCompanySearchProviderTests : IDisposable
             .RespondWith(Response.Create().WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json").WithBody(body));
 
-        var result = await _sut.SearchByNameAsync("Bedrift som ikke finnes", 20, CancellationToken.None);
+        var result = await _sut.SearchByNameAsync("Bedrift som ikke finnes", 20, 0, CancellationToken.None);
 
         result.Hits.Should().BeEmpty();
         result.TotalElements.Should().Be(0);
@@ -100,10 +100,63 @@ public class BrregCompanySearchProviderTests : IDisposable
             .RespondWith(Response.Create().WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json").WithBody(body));
 
-        var result = await _sut.SearchByNameAsync("røa", 20, CancellationToken.None);
+        var result = await _sut.SearchByNameAsync("røa", 20, 0, CancellationToken.None);
 
         result.Hits.Should().HaveCount(1);
         result.Hits[0].Name.Should().Be("RØA ALLIANSEIDRETTSLAG");
+    }
+
+    [TestMethod]
+    public async Task SearchByNameAsync_PageMetadataIsPassedThroughFromBrreg()
+    {
+        const string body = """
+            {
+              "_embedded": { "enheter": [{"organisasjonsnummer": "971491787", "navn": "FOO", "organisasjonsform": {"kode": "AS"}}] },
+              "page": { "totalElements": 142, "totalPages": 6, "number": 2, "size": 25 }
+            }
+            """;
+        _wireMock.Given(Request.Create().WithPath("/enheter").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json").WithBody(body));
+
+        var result = await _sut.SearchByNameAsync("foo", 25, 2, CancellationToken.None);
+
+        result.Page.Should().Be(2);
+        result.TotalPages.Should().Be(6);
+        result.PageSize.Should().Be(25);
+        result.TotalElements.Should().Be(142);
+    }
+
+    [TestMethod]
+    public async Task SearchByNameAsync_PageZero_OmitsPageParameter()
+    {
+        // First-page requests should hit Brreg without a &page= query string. Brreg defaults to
+        // page 0 anyway and skipping it keeps cache keys and proxy logs tidier.
+        _wireMock.Given(Request.Create().WithPath("/enheter").WithParam("page").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(400));   // would 400 if page= is present
+        _wireMock.Given(Request.Create().WithPath("/enheter").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody("""{"_embedded":{"enheter":[]},"page":{"totalElements":0,"totalPages":0,"number":0,"size":25}}"""));
+
+        var result = await _sut.SearchByNameAsync("foo", 25, 0, CancellationToken.None);
+
+        result.Hits.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task SearchByNameAsync_PageGreaterThanZero_IncludesPageParameter()
+    {
+        _wireMock.Given(Request.Create().WithPath("/enheter").WithParam("page", "3").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody("""{"_embedded":{"enheter":[{"organisasjonsnummer":"971491787","navn":"PAGE3","organisasjonsform":{"kode":"AS"}}]},"page":{"totalElements":100,"totalPages":4,"number":3,"size":25}}"""));
+
+        var result = await _sut.SearchByNameAsync("foo", 25, 3, CancellationToken.None);
+
+        result.Hits.Should().HaveCount(1);
+        result.Hits[0].Name.Should().Be("PAGE3");
+        result.Page.Should().Be(3);
     }
 
     [TestMethod]
@@ -125,7 +178,7 @@ public class BrregCompanySearchProviderTests : IDisposable
             .RespondWith(Response.Create().WithStatusCode(200)
                 .WithHeader("Content-Type", "application/json").WithBody(body));
 
-        var result = await _sut.SearchByNameAsync("query", 20, CancellationToken.None);
+        var result = await _sut.SearchByNameAsync("query", 20, 0, CancellationToken.None);
 
         result.Hits.Should().HaveCount(1);
         result.Hits[0].Name.Should().Be("REAL");

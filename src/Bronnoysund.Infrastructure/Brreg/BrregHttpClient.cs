@@ -19,11 +19,17 @@ internal sealed class BrregHttpClient(HttpClient http, ILogger<BrregHttpClient> 
     public Task<BrregEnhetDto?> GetEnhetAsync(OrganizationNumber org, CancellationToken ct)
         => GetJsonOrNullAsync<BrregEnhetDto>($"enheter/{org.Value}", org.Value, ct);
 
-    public Task<BrregEnheterPageDto?> SearchEnheterByNameAsync(string query, int size, CancellationToken ct)
+    public Task<BrregEnheterPageDto?> SearchEnheterByNameAsync(string query, int size, int page, CancellationToken ct)
     {
         // Uri.EscapeDataString safely encodes Norwegian characters (æøå) and spaces.
+        // Brreg only honors &page= when it is > 0; omitting it (rather than sending &page=0)
+        // keeps cache keys upstream of any proxy clean and avoids an extra query-string knob
+        // for the common first-page case.
         var encoded = Uri.EscapeDataString(query);
-        return GetJsonOrNullAsync<BrregEnheterPageDto>($"enheter?navn={encoded}&size={size}", query, ct);
+        var path = page > 0
+            ? $"enheter?navn={encoded}&size={size}&page={page}"
+            : $"enheter?navn={encoded}&size={size}";
+        return GetJsonOrNullAsync<BrregEnheterPageDto>(path, query, ct);
     }
 
     private async Task<T?> GetJsonOrNullAsync<T>(string path, string contextValue, CancellationToken ct)

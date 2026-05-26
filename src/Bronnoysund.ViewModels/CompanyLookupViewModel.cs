@@ -44,6 +44,18 @@ public sealed partial class CompanyLookupViewModel(
     [ObservableProperty]
     public partial int SearchTotalElements { get; set; }
 
+    /// <summary>Zero-indexed current page (matches Brreg's wire format).</summary>
+    [ObservableProperty]
+    public partial int CurrentPage { get; set; }
+
+    /// <summary>Page size in the most recent search response (echoed from Brreg).</summary>
+    [ObservableProperty]
+    public partial int PageSize { get; set; } = SearchCompaniesByNameHandler.DefaultPageSize;
+
+    /// <summary>Total pages available for the current query/pageSize, per Brreg.</summary>
+    [ObservableProperty]
+    public partial int TotalPages { get; set; }
+
     [RelayCommand]
     public async Task LookupAsync(CancellationToken ct)
     {
@@ -61,6 +73,8 @@ public sealed partial class CompanyLookupViewModel(
         // Fresh user-initiated lookup — clear any prior search-hit breadcrumb.
         SearchHits = [];
         SearchTotalElements = 0;
+        TotalPages = 0;
+        CurrentPage = 0;
         await LookupCoreAsync(ct);
     }
 
@@ -102,6 +116,7 @@ public sealed partial class CompanyLookupViewModel(
         }
     }
 
+    /// <summary>New name search — always starts at page 0 and clears any previous result.</summary>
     [RelayCommand]
     public async Task SearchByNameAsync(CancellationToken ct)
     {
@@ -109,22 +124,61 @@ public sealed partial class CompanyLookupViewModel(
         {
             return;
         }
+        CurrentPage = 0;
+        await SearchCoreAsync(ct);
+    }
 
+    /// <summary>
+    /// Navigate to <paramref name="page"/> (zero-indexed) within the current query. Out-of-range
+    /// requests are ignored. The HybridCache-backed decorator on the search provider serves
+    /// pages already visited within the TTL window without re-hitting Brreg.
+    /// </summary>
+    public async Task GoToPageAsync(int page, CancellationToken ct)
+    {
+        if (IsBusy || page < 0 || page >= TotalPages || page == CurrentPage)
+        {
+            return;
+        }
+        CurrentPage = page;
+        await SearchCoreAsync(ct);
+    }
+
+    /// <summary>
+    /// Change page size and re-search at page 0. Existing TotalPages is recalculated by the
+    /// backend, so a previous "page 7 of 10" can legitimately become "page 0 of 3" after
+    /// bumping the size up.
+    /// </summary>
+    public async Task ChangePageSizeAsync(int newPageSize, CancellationToken ct)
+    {
+        if (IsBusy || newPageSize == PageSize)
+        {
+            return;
+        }
+        PageSize = newPageSize;
+        CurrentPage = 0;
+        await SearchCoreAsync(ct);
+    }
+
+    private async Task SearchCoreAsync(CancellationToken ct)
+    {
         IsBusy = true;
         ErrorMessage = null;
         StatusMessage = null;
         Found = null;
         SearchHits = [];
-        SearchTotalElements = 0;
 
         try
         {
-            var result = await searchHandler.HandleAsync(new SearchCompaniesByNameQuery(NameQueryInput), ct);
+            var result = await searchHandler.HandleAsync(
+                new SearchCompaniesByNameQuery(NameQueryInput, PageSize, CurrentPage), ct);
             switch (result)
             {
                 case SearchCompaniesByNameResult.Found f:
                     SearchHits = f.Result.Hits;
                     SearchTotalElements = f.Result.TotalElements;
+                    TotalPages = f.Result.TotalPages;
+                    CurrentPage = f.Result.Page;     // sync with what backend echoed
+                    PageSize = f.Result.PageSize;    // ditto — Brreg may have clamped
                     if (SearchHits.Count == 0)
                     {
                         ErrorMessage = localizer["NoHitsForName"];
@@ -132,9 +186,13 @@ public sealed partial class CompanyLookupViewModel(
                     break;
                 case SearchCompaniesByNameResult.InvalidInput inv:
                     ErrorMessage = inv.Message;
+                    SearchTotalElements = 0;
+                    TotalPages = 0;
                     break;
                 case SearchCompaniesByNameResult.Unavailable u:
                     ErrorMessage = localizer["RegistryUnavailable", u.Message];
+                    SearchTotalElements = 0;
+                    TotalPages = 0;
                     break;
             }
         }

@@ -34,8 +34,7 @@ internal sealed class BrregCompanyProvider(
             if (domain is null)
             {
                 logger.LogWarning("Brreg returned a response for {OrgNumber} but mapping did not produce a valid Company", org.Value);
-                return new CompanyLookupResult.Unavailable(
-                    "Brreg returned an unexpected response structure.");
+                return new CompanyLookupResult.Unavailable("Brreg returned an unexpected response structure.");
             }
 
             return new CompanyLookupResult.Found(MapToResponse(dto, domain));

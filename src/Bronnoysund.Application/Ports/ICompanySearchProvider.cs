@@ -10,7 +10,7 @@ namespace Bronnoysund.Application.Ports;
 /// </summary>
 public interface ICompanySearchProvider
 {
-    Task<CompanySearchResult> SearchByNameAsync(string query, int maxResults, CancellationToken ct);
+    Task<CompanySearchResult> SearchByNameAsync(string query, int pageSize, int page, CancellationToken ct);
 }
 
 /// <summary>One row in a name-search result list.</summary>
@@ -21,9 +21,13 @@ public sealed record CompanySearchHit(
     string? PostalCity);
 
 /// <summary>
-/// A page of search hits. TotalElements reflects the registry's full result count so the UI
-/// can hint the user to narrow the query when only the first N of M are shown.
+/// A page of search hits. TotalElements reflects the registry's full result count;
+/// Page / TotalPages / PageSize echo the page metadata Brreg returns so the UI can render
+/// a pagination control and the cache layer can key on (query, pageSize, page).
 /// </summary>
 public sealed record CompanySearchResult(
     IReadOnlyList<CompanySearchHit> Hits,
-    int TotalElements);
+    int TotalElements,
+    int Page = 0,
+    int TotalPages = 1,
+    int PageSize = 25);

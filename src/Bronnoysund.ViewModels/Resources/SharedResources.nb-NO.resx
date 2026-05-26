@@ -51,7 +51,8 @@
   <data name="CompanyNameCol"><value>Navn</value></data>
   <data name="CompanyTypeColHeader"><value>Form</value></data>
   <data name="PostalCityCol"><value>Sted</value></data>
-  <data name="SearchPaginationHint"><value>Viser {0} av {1} treff — søk mer presist for å snevre inn.</value></data>
+  <data name="PageSizeLabel"><value>Treff per side</value></data>
+  <data name="PaginationInfo"><value>Side {0} av {1} · {2} treff totalt</value></data>
   <data name="NoHitsForName"><value>Ingen virksomheter funnet med dette navnet.</value></data>
   <data name="OtherHitsHeader"><value>Andre søketreff</value></data>
 

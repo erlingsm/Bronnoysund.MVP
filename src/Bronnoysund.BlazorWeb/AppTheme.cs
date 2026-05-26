@@ -4,7 +4,7 @@ using MudBlazor;
 
 namespace Bronnoysund.BlazorWeb;
 
-internal static class MyttingConsultTheme
+internal static class AppTheme
 {
     public static MudTheme Instance { get; } = new()
     {
