@@ -10,9 +10,9 @@
     <NoWarn>$(NoWarn);CS1591;CA1848;CA1873;CA1062;CA1031;CA2007;CA1305;CA1303;CA2234;CA1707;CA2227;CA1812;CA1859;CA1860;CA1822;CA1002;CA1711</NoWarn>
     <Authors>Røa Systemutvikling AS</Authors>
     <Company>Røa Systemutvikling AS</Company>
-    <Product>Bronnoysund.Lookup</Product>
+    <Product>Bronnoysund.MVP</Product>
     <Copyright>Copyright © Røa Systemutvikling AS</Copyright>
-    <RepositoryUrl>https://github.com/erlingsm/Bronnoysund.Lookup</RepositoryUrl>
-    <PackageLicenseExpression>AGPL-3.0-or-later OR LicenseRef-Commercial</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/erlingsm/Bronnoysund.MVP</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT
 #
-# Local manual deploy pipeline for Bronnoysund.Lookup.MVP.
+# Local manual deploy pipeline for Bronnoysund.MVP.
 #
 # Builds, tests, builds an image in ACR (no local Docker daemon),
 # updates the Container App, and smoke-tests the public URL.
@@ -21,7 +21,7 @@ readonly RG="bronnoysund-mvp-rg"
 readonly ACR="bronnoysundmvp04726"
 readonly APP="bronnoysund-mvp"
 readonly URL="https://${APP}.redpebble-469bb928.norwayeast.azurecontainerapps.io"
-readonly DOCKERFILE="src/Bronnoysund.Lookup.BlazorWeb/Dockerfile"
+readonly DOCKERFILE="src/Bronnoysund.BlazorWeb/Dockerfile"
 
 DRY_RUN=0
 if [[ "${1:-}" == "--dry-run" ]]; then

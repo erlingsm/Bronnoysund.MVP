@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT
 #
-# Tear down the Azure resource group for Bronnoysund.Lookup.MVP.
+# Tear down the Azure resource group for Bronnoysund.MVP.
 # Destroys the Container App, ACR, and managed environment.
 #
 # Usage:

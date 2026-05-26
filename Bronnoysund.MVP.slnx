@@ -1,0 +1,29 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Bronnoysund.Application/Bronnoysund.Application.csproj" />
+    <Project Path="src/Bronnoysund.BlazorWeb/Bronnoysund.BlazorWeb.csproj" />
+    <Project Path="src/Bronnoysund.Components/Bronnoysund.Components.csproj" />
+    <Project Path="src/Bronnoysund.Domain/Bronnoysund.Domain.csproj" />
+    <Project Path="src/Bronnoysund.Infrastructure/Bronnoysund.Infrastructure.csproj" />
+    <Project Path="src/Bronnoysund.ViewModels/Bronnoysund.ViewModels.csproj" />
+    <Project Path="src/Bronnoysund.WebApi/Bronnoysund.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Bronnoysund.Application.Tests/Bronnoysund.Application.Tests.csproj" />
+    <Project Path="tests/Bronnoysund.Domain.Tests/Bronnoysund.Domain.Tests.csproj" />
+    <Project Path="tests/Bronnoysund.Infrastructure.Tests/Bronnoysund.Infrastructure.Tests.csproj" />
+    <Project Path="tests/Bronnoysund.ViewModels.Tests/Bronnoysund.ViewModels.Tests.csproj" />
+  </Folder>
+  <Folder Name="/deploy/">
+    <File Path="deploy/README.md" />
+    <File Path="deploy/deploy.sh" />
+    <File Path="deploy/teardown.sh" />
+  </Folder>
+  <Folder Name="/docs/">
+    <File Path="docs/handoff-2026-05-26.md" />
+    <File Path="docs/review-2026-05-26.md" />
+  </Folder>
+  <Folder Name="/docs/presentation/">
+    <File Path="docs/presentation/index.html" />
+  </Folder>
+</Solution>

@@ -1,4 +1,4 @@
-# Bronnoysund.Lookup.MVP
+# Bronnoysund.MVP
 
 MVP delivery for the Brreg Company Lookup home assignment.
 Given a Norwegian organisation number, looks up the company in the Brønnøysund
@@ -31,13 +31,13 @@ name-search extension.
 dotnet build
 
 # 2. Run the Blazor Web frontend (primary demo target)
-dotnet run --project src/Bronnoysund.Lookup.BlazorWeb --urls http://localhost:5199
+dotnet run --project src/Bronnoysund.BlazorWeb --urls http://localhost:5199
 # Then open http://localhost:5199/ in a browser.
 # Try: orgnr 919300388, or name "Statens vegvesen".
 # Switch language at /settings.
 
 # 3. Or run the REST WebApi (alternative target)
-dotnet run --project src/Bronnoysund.Lookup.WebApi --urls http://localhost:5000
+dotnet run --project src/Bronnoysund.WebApi --urls http://localhost:5000
 # Then:
 curl http://localhost:5000/health
 curl http://localhost:5000/companies/919300388
@@ -55,10 +55,10 @@ dotnet test
 
 ~58 tests across four test projects:
 
-- `Bronnoysund.Lookup.Domain.Tests` — organisation-number validation (MOD11, normalisation, edge cases)
-- `Bronnoysund.Lookup.Application.Tests` — handler behaviour with mocked port
-- `Bronnoysund.Lookup.Infrastructure.Tests` — `BrregHttpClient` with WireMock stubs, search, mapping
-- `Bronnoysund.Lookup.ViewModels.Tests` — localisation parity (en / nb-NO / nn-NO)
+- `Bronnoysund.Domain.Tests` — organisation-number validation (MOD11, normalisation, edge cases)
+- `Bronnoysund.Application.Tests` — handler behaviour with mocked port
+- `Bronnoysund.Infrastructure.Tests` — `BrregHttpClient` with WireMock stubs, search, mapping
+- `Bronnoysund.ViewModels.Tests` — localisation parity (en / nb-NO / nn-NO)
 
 Total run time: under 1 s after first build. No real Brønnøysund call needed
 for the test suite.
@@ -131,7 +131,7 @@ The live demo runs on **Azure Container Apps** (region `norwayeast`):
 ```bash
 # Build image to ACR (no Docker daemon required locally)
 az acr build --registry <acrName> --image bronnoysund-mvp:latest \
-    --file src/Bronnoysund.Lookup.BlazorWeb/Dockerfile .
+    --file src/Bronnoysund.BlazorWeb/Dockerfile .
 
 # Deploy to Container App
 az containerapp update --name bronnoysund-mvp -g bronnoysund-mvp-rg \

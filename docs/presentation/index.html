@@ -371,7 +371,7 @@ TAG="$(git rev-parse --short HEAD)"
 az acr build \
     --registry bronnoysundmvp04726 \
     --image    "bronnoysund-mvp:${TAG}" \
-    --file     src/Bronnoysund.Lookup.BlazorWeb/Dockerfile .
+    --file     src/Bronnoysund.BlazorWeb/Dockerfile .
 
 az containerapp update \
     --name              bronnoysund-mvp \
@@ -422,7 +422,7 @@ az containerapp update \
         </div>
     </div>
     <p class="small muted" style="margin-top: 1.5em;">
-        <a href="https://github.com/erlingsm/Bronnoysund.Lookup.MVP">github.com/erlingsm/Bronnoysund.Lookup.MVP</a> ·
+        <a href="https://github.com/erlingsm/Bronnoysund.MVP">github.com/erlingsm/Bronnoysund.MVP</a> ·
         <a href="https://github.com/erlingsm/Bronnoysund.Lookup">github.com/erlingsm/Bronnoysund.Lookup</a>
     </p>
 </section>

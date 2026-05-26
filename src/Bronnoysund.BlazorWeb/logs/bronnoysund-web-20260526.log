@@ -1,0 +1,47 @@
+2026-05-26 19:30:58.608 +02:00 [INF] User profile is available. Using '/Users/esm/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
+2026-05-26 19:30:58.647 +02:00 [INF] Bronnoysund.BlazorWeb starting on 
+2026-05-26 19:30:58.715 +02:00 [INF] Now listening on: http://localhost:5199
+2026-05-26 19:30:58.716 +02:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-05-26 19:30:58.716 +02:00 [INF] Hosting environment: Development
+2026-05-26 19:30:58.716 +02:00 [INF] Content root path: /Users/esm/UtviklingPrivat/Bronnoysund.Lookup.MVP/src/Bronnoysund.BlazorWeb
+2026-05-26 19:30:59.571 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/ - null null
+2026-05-26 19:30:59.586 +02:00 [INF] Executing endpoint '/ (/)'
+2026-05-26 19:30:59.720 +02:00 [INF] Executed endpoint '/ (/)'
+2026-05-26 19:30:59.721 +02:00 [INF] HTTP GET / responded 200 in 135.1193 ms
+2026-05-26 19:30:59.728 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/ - 200 null text/html; charset=utf-8 157.2491ms
+2026-05-26 19:30:59.729 +02:00 [INF] Request starting HTTP/1.1 HEAD http://localhost:5199/ - null null
+2026-05-26 19:30:59.732 +02:00 [INF] HTTP HEAD / responded 404 in 2.5193 ms
+2026-05-26 19:30:59.732 +02:00 [INF] Request finished HTTP/1.1 HEAD http://localhost:5199/ - 404 null null 2.9201ms
+2026-05-26 19:30:59.732 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: HEAD http://localhost:5199/, Response status code: 404
+2026-05-26 19:30:59.740 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/ - null null
+2026-05-26 19:30:59.740 +02:00 [INF] Executing endpoint '/ (/)'
+2026-05-26 19:30:59.744 +02:00 [INF] Executed endpoint '/ (/)'
+2026-05-26 19:30:59.744 +02:00 [INF] HTTP GET / responded 200 in 3.7828 ms
+2026-05-26 19:30:59.744 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/ - 200 null text/html; charset=utf-8 4.2516ms
+2026-05-26 19:30:59.752 +02:00 [INF] Application is shutting down...
+2026-05-26 19:31:17.375 +02:00 [INF] User profile is available. Using '/Users/esm/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
+2026-05-26 19:31:17.414 +02:00 [INF] Bronnoysund.BlazorWeb starting on 
+2026-05-26 19:31:17.477 +02:00 [INF] Now listening on: http://localhost:5199
+2026-05-26 19:31:17.479 +02:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-05-26 19:31:17.479 +02:00 [INF] Hosting environment: Development
+2026-05-26 19:31:17.479 +02:00 [INF] Content root path: /Users/esm/UtviklingPrivat/Bronnoysund.Lookup.MVP/src/Bronnoysund.BlazorWeb
+2026-05-26 19:31:17.842 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/lookup - null null
+2026-05-26 19:31:17.859 +02:00 [INF] Executing endpoint '/lookup (/lookup)'
+2026-05-26 19:31:17.991 +02:00 [INF] Executed endpoint '/lookup (/lookup)'
+2026-05-26 19:31:17.992 +02:00 [INF] HTTP GET /lookup responded 200 in 133.9241 ms
+2026-05-26 19:31:17.999 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/lookup - 200 null text/html; charset=utf-8 157.5015ms
+2026-05-26 19:31:18.001 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/ - null null
+2026-05-26 19:31:18.001 +02:00 [INF] Executing endpoint '/ (/)'
+2026-05-26 19:31:18.005 +02:00 [INF] Executed endpoint '/ (/)'
+2026-05-26 19:31:18.005 +02:00 [INF] HTTP GET / responded 200 in 3.7265 ms
+2026-05-26 19:31:18.005 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/ - 200 null text/html; charset=utf-8 4.3358ms
+2026-05-26 19:31:18.013 +02:00 [INF] Request starting HTTP/1.1 GET http://localhost:5199/lookup - null null
+2026-05-26 19:31:18.015 +02:00 [INF] Executing endpoint '/lookup (/lookup)'
+2026-05-26 19:31:18.021 +02:00 [INF] Executed endpoint '/lookup (/lookup)'
+2026-05-26 19:31:18.021 +02:00 [INF] HTTP GET /lookup responded 200 in 5.2430 ms
+2026-05-26 19:31:18.021 +02:00 [INF] Request finished HTTP/1.1 GET http://localhost:5199/lookup - 200 null text/html; charset=utf-8 7.6979ms
+2026-05-26 19:31:18.029 +02:00 [INF] Request starting HTTP/1.1 HEAD http://localhost:5199/ - null null
+2026-05-26 19:31:18.032 +02:00 [INF] HTTP HEAD / responded 404 in 2.4188 ms
+2026-05-26 19:31:18.032 +02:00 [INF] Request finished HTTP/1.1 HEAD http://localhost:5199/ - 404 null null 2.82ms
+2026-05-26 19:31:18.032 +02:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: HEAD http://localhost:5199/, Response status code: 404
+2026-05-26 19:31:18.044 +02:00 [INF] Application is shutting down...
