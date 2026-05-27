@@ -1,19 +1,51 @@
 # Bronnoysund.MVP
 
-MVP delivery for the Brreg Company showcasing a simple lookup against the Register.
-Given a Norwegian organisation number, looks up the company in the Brønnøysund
-Enhetsregisteret and returns a simplified English response. Includes a Blazor
-Server web frontend with English / Bokmål / Nynorsk language switching and a
-name-search extension.
+> Look up Norwegian companies in the Brønnøysund Register Centre. .NET 10 Clean Architecture, Blazor Server UI + JSON REST API, deployed to Azure Container Apps with OIDC-gated CI/CD.
 
-**Live:**
+## Background
 
-- UI + JSON API: <https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io>
-- WebApi standalone (JSON only): <https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io>
+A small home assignment: given a Norwegian organisation number, look it up in the Brønnøysund Enhetsregisteret and return a simplified English response. Plus three deliberate extensions agreed up-front — a Blazor Server web frontend with English / Bokmål / Nynorsk language switching, a paginated name search, and a JSON flip-view that lets the user see the API contract from inside the UI.
 
-> Sister project (full product family — MAUI Desktop, MAUI Mobile, Azure
-> Container Apps, multi-registry aggregator, persistence, watch apps):
-> <https://github.com/erlingsm/Bronnoysund.Lookup>
+Sister project (the broader product family — MAUI Desktop, MAUI Mobile, multi-registry aggregator, persistence, watch apps): <https://github.com/erlingsm/Bronnoysund.Lookup>.
+
+## Live
+
+- **UI + JSON API**: <https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io>
+- **WebApi standalone** (JSON only): <https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io>
+
+## Demo on the web
+
+A guided click-through of the deployed UI. About three minutes.
+
+1. Open <https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io> in any modern browser. The page is a single input with a "Look up" button and a radio toggle for **Organization number** vs **Name**.
+
+2. **Org-number happy path** — enter `919300388` and press Enter. The detail card slides in with company name (Artisan Consulting AS), `AS` form code, `Bokmål` language form, plus a "Details" block with industry, employee count, founding date, and which Brreg sub-registries the entity is in.
+
+3. **JSON flip-view** — click the small `<>` icon in the bottom-right corner of the detail card. The card flips with a 0.6 s `rotateY` animation to show the same data as JSON, formatted line-by-line — the exact shape the API returns. Click the eye icon on the back of the card to flip it back.
+
+4. **Error path — invalid format** — clear the input, enter `12345`, press Look up. Error message: "Organization number must be exactly 9 digits (got 5)." Validation runs in `Domain` before any HTTP call.
+
+5. **Error path — MOD11 rejection** — enter `800000050`. Error: "Organization number has an invalid MOD11 check digit." This is the edge case where the first 8 digits' weighted sum modulo 11 equals 1 — invalid because the check digit would have had to be 10. The original assignment didn't require MOD11; we added it as a free quality win that saves one wasted HTTP roundtrip per invalid input.
+
+6. **Name search with pagination** — flip the radio to **Name**, enter `Universitetet`, press Search. After a beat, a paginated table appears with up to 25 hits. Below the table: page navigator (`< 1 2 3 ... >`), page-size dropdown (10 / 25 / 50 / 100), and a caption "Page 1 of N · M hits total".
+
+7. **Cache test** — click page 2, then page 3, then back to page 1. The first visit to each page is a Brreg call (~150 ms); revisits within five minutes are served from the in-process `HybridCache` without a network roundtrip.
+
+8. **Drill-down** — click any row in the search table. The detail card for that company appears _above_ the search list (deliberate order — drill-down first, breadcrumb of "Other hits" below).
+
+9. **Title-click reset** — click **"Information about companies from the Brønnøysund Register Centre"** in the app-bar. The form clears, but the `HybridCache` layer is preserved — the next lookup or search for something you've already queried still hits cache.
+
+10. **Language switcher** — hamburger menu (top-right) → choose **Norsk** or **Nynorsk**. Cookie-based, persists across reloads. All labels, error messages and pagination captions are localised via `IStringLocalizer<SharedResources>` against three `.resx` files. Parity tests enforce that every key in the default `.resx` exists in `nb-NO` and `nn-NO` — no silent English fallback.
+
+11. **JSON API direct** — in a terminal:
+
+    ```bash
+    curl -s https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io/api/companies/919300388 | python3 -m json.tool
+    ```
+
+    Same shape as the JSON flip-view shows.
+
+For a curated table of inputs that hit every code path, see [Demo inputs](#demo-inputs).
 
 ## Stack
 
@@ -21,10 +53,35 @@ name-search extension.
 - **ASP.NET Core Minimal API** for the REST endpoint host
 - **Blazor Server + MudBlazor** for the web UI
 - **CommunityToolkit.Mvvm** for the lookup view-model
-- **Polly v8** (`Microsoft.Extensions.Http.Resilience`) for retry / circuit-breaker / timeout
-- **HybridCache** for in-process cache with 24 h TTL
-- **Serilog** for structured logging (console + rolling file)
-- **MSTest + FluentAssertions + NSubstitute + WireMock.Net** for testing
+- **Polly v8** (`Microsoft.Extensions.Http.Resilience`) — retry / circuit breaker / timeout / rate limiter
+- **HybridCache** — in-process cache; 24 h TTL for orgnr lookups, 5 min for name-search pages
+- **Serilog** — structured logging (console + rolling file)
+- **MSTest + FluentAssertions + NSubstitute + WireMock.Net** — testing (77 tests, < 1 s total runtime)
+
+## Project layout
+
+```text
+/
+├── src/
+│   ├── Bronnoysund.Domain/             OrganizationNumber value object, Company, LanguageForm enum
+│   ├── Bronnoysund.Application/        Use-case handlers, ports, result discriminated union, DTOs
+│   ├── Bronnoysund.Infrastructure/     BrregHttpClient + DTOs, caching decorators, Polly setup
+│   ├── Bronnoysund.WebApi/             Minimal API host (JSON only)
+│   ├── Bronnoysund.ViewModels/         CompanyLookupViewModel + localisation .resx
+│   ├── Bronnoysund.Components/         Razor components (Lookup page) — RCL shared between hosts
+│   └── Bronnoysund.BlazorWeb/          Blazor Server host (UI + /api JSON endpoint)
+├── tests/
+│   ├── Bronnoysund.Domain.Tests/         24 tests — MOD11, normalisation, edge cases
+│   ├── Bronnoysund.Application.Tests/    21 tests — handler logic, pagination, cancellation
+│   ├── Bronnoysund.Infrastructure.Tests/ 24 tests — WireMock-stubbed HTTP + cache round-trips
+│   └── Bronnoysund.ViewModels.Tests/      8 tests — localisation parity (en / nb-NO / nn-NO)
+├── deploy/
+│   ├── deploy.sh                       Local manual deploy (build + test + acr build + update)
+│   ├── teardown.sh                     az group delete with --yes guard
+│   └── README.md                       CI/CD vs local, RBAC + managed identity setup
+└── .github/workflows/
+    └── build-and-deploy.yml            OIDC-gated CI/CD: parallel deploy to BlazorWeb + WebApi
+```
 
 ## API
 
@@ -105,32 +162,37 @@ Default page size is 25, configurable per request via `?size=10|25|50|100`. Page
 | `503` | Brreg unreachable / timed out / 5xx after Polly retries | `ProblemDetails` JSON with `title` + `detail` |
 | `500` | Unexpected internal error | `ProblemDetails` |
 
-### Testing the API
+### Demo inputs
 
-**Live** (curl-cookbook):
+Curated test inputs that exercise each code path. Use these for the live demo or for `curl` against either host:
 
-```bash
-# Happy path — orgnr lookup
-curl -s https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io/api/companies/919300388 | python3 -m json.tool
-curl -s https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/companies/919300388 | python3 -m json.tool
+**Lookup**:
 
-# Happy path — name search with pagination
-curl -s "https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/companies?name=Statens+vegvesen&size=10&page=0" | python3 -m json.tool
+| Orgnr / Input | Outcome | HTTP |
+| --- | --- | --- |
+| `919300388` | Artisan Consulting AS — happy path | `200` |
+| `974760843` | Riksrevisjonen — public-sector entity (Bokmål `maalform`) | `200` |
+| `971032081` | Statens vegvesen — `ORGL` organisation form | `200` |
+| `933722821` | Røa Systemutvikling AS — small AS | `200` |
+| `12345` | Too short → "must be exactly 9 digits" | `400` |
+| `abc123def` | Non-digit → "can only contain digits" | `400` |
+| `712345678` | Wrong prefix → "must start with 8 or 9" | `400` |
+| `800000050` | Valid format but `sum % 11 == 1` (MOD11 edge case) | `400` |
+| `899999991` | Valid MOD11, likely **not registered** in Brreg | `404` |
+| empty / `""` | "cannot be empty" | `400` |
 
-# Invalid input → 400
-curl -sw "\nHTTP %{http_code}\n" https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/companies/12345
+**Name search**:
 
-# Health
-curl -s https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/health
-```
+| Query | Expected | Notes |
+| --- | --- | --- |
+| `Statens vegvesen` | 1–3 hits | Single-result drill-down |
+| `Equinor` | 1–5 hits | Large entity, multiple sub-units |
+| `Røa` | Many hits | Exercises UTF-8 query encoding |
+| `Universitetet` | Many hits | Multi-page pagination |
+| `a` (single char) | "must be at least 2 characters" | `400` |
+| `enikkeeksisterendebedrift123` | Empty hit list, "No companies found" | `200` |
 
-**Locally** — see [Run locally](#run-locally) below for the `dotnet run` commands.
-
-**Curated test inputs** (orgnr that hit each path, search queries that exercise pagination) — see [Demo guide](#demo-guide).
-
-**In the IDE** — open [`src/Bronnoysund.WebApi/Bronnoysund.WebApi.http`](src/Bronnoysund.WebApi/Bronnoysund.WebApi.http) in JetBrains Rider or VS Code with the REST Client extension; each request is one click.
-
-**Automated** — `dotnet test` runs 77 tests against a WireMock-stubbed Brreg, including HTTP-status mapping, MOD11 edge cases, search pagination, and cache round-trips. No live Brreg calls during CI.
+To exercise the `503` timeout / unavailable branch, point `Brreg:BaseUrl` at an unreachable host. Not part of the live demo, but covered by `BrregHttpClientIntegrationTests.Status500_ThrowsBrregUnavailable`.
 
 ## Run locally
 
@@ -150,99 +212,9 @@ curl http://localhost:5000/companies/919300388
 curl "http://localhost:5000/companies?name=Statens+vegvesen&size=5"
 ```
 
-Both hosts hit Brønnøysund directly (no DB, no separate API tier — the
-Application + Infrastructure layers are shared between them).
+Both hosts hit Brønnøysund directly (no DB, no separate API tier — the Application + Infrastructure layers are shared between them).
 
-## UI features
-
-What the user sees when interacting with the deployed BlazorWeb:
-
-### Lookup mode toggle
-
-Radio buttons at the top of the form switch between **organisation-number lookup** and **name search**. Each mode has its own input + button.
-
-### Paginated name search
-
-When a name search returns more hits than fit on one page, three controls appear under the result table:
-
-- **`Page X of Y · N hits total`** — caption with current page, total pages, and total result count, straight from Brreg's page metadata.
-- **`MudPagination`** — page navigator (`< 1 2 3 ... >`). Only shown when `TotalPages > 1`.
-- **`Hits per page`** dropdown — `10 / 25 / 50 / 100`. Default 25. Changing the value re-runs the search at page 0 with the new size.
-
-The result list is cached for 5 minutes per `(query, page-size, page)` combination via `HybridCache`. Paging back and forth across pages you've already seen does not hit Brreg.
-
-### JSON flip-view on the detail card
-
-Once a single company is shown (either via orgnr lookup or by drilling into a search hit), a small icon button appears in the **bottom-right corner of the detail card**.
-
-- Click the `<>` icon → the card flips with a 0.6 s `rotateY` animation to show the same data as raw JSON, formatted line-by-line — the exact shape the JSON API returns.
-- Click the `👁` icon on the back of the card → flips back to the structured view.
-
-Useful for demoing the API contract without leaving the UI.
-
-### Title click resets the form
-
-Clicking **"Virksomhetsinformasjon fra Brønnøysundregistrene"** (or its English / Nynorsk equivalent) in the app-bar clears every form field, error, status message, search result and pagination state — and navigates the browser back to `/`.
-
-The HybridCache layer in Infrastructure is untouched, so the next search or lookup for something you've already queried is still served from cache.
-
-### Language switcher
-
-Hamburger menu (top-right of app-bar) → choose **English / Norsk / Nynorsk**. Selection is persisted via a cookie set by a `/set-culture` endpoint (closed allowlist + `Results.LocalRedirect` for safety), so the choice survives reloads.
-
-## Demo guide
-
-A curated set of inputs to exercise each path during a live demo.
-
-### Lookup — happy paths (returns 200 with the 4 English fields)
-
-| Orgnr | Company | Notes |
-| --- | --- | --- |
-| `919300388` | Artisan Consulting AS | Used in tests |
-| `974760843` | Riksrevisjonen | Public-sector entity (Bokmål `maalform`) |
-| `971032081` | Statens vegvesen | Government body (`ORGL` form) |
-| `933722821` | Røa Systemutvikling AS | Small AS |
-
-### Lookup — error paths
-
-| Orgnr / Input | Outcome | HTTP |
-| --- | --- | --- |
-| `12345` | Too short → "must be exactly 9 digits" | `400` |
-| `abc123def` | Non-digit → "can only contain digits" | `400` |
-| `712345678` | Wrong prefix → "must start with 8 or 9" | `400` |
-| `800000050` | Valid format but `sum % 11 == 1` (MOD11 rejects "check digit would have been 10") | `400` |
-| `899999991` | Valid MOD11, but likely **not registered** in Brreg → "Not found" | `404` |
-| empty | "cannot be empty" | `400` |
-
-To exercise the timeout / unavailable branch, you'd need to point `Brreg:BaseUrl` at an unreachable host — not part of the live demo, but covered by `BrregHttpClientIntegrationTests.Status500_ThrowsBrregUnavailable`.
-
-### Name search — happy paths
-
-| Query | Expected | Notes |
-| --- | --- | --- |
-| `Statens vegvesen` | 1–3 hits | Single-result drill-down |
-| `Equinor` | 1–5 hits | Large entity, multiple sub-units |
-| `Røa` | Many hits | Tests UTF-8 query encoding and pagination |
-| `Universitetet` | Many hits | Pagination across multiple pages |
-
-### Name search — guarded paths
-
-| Query | Outcome |
-| --- | --- |
-| empty / whitespace | "must be at least 2 characters" |
-| `a` | Same — single character also blocked |
-| `enikkeeksisterendebedrift123` | Empty hit list, "No companies found" message |
-
-### Quick smoke against live
-
-```bash
-# UI host returns the 4 required fields + a "details" sub-object with bonus data
-curl -s https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io/api/companies/919300388
-
-# Standalone WebApi returns the same JSON, plus name search
-curl -s https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/companies/919300388
-curl -s "https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/companies?name=Statens+vegvesen&size=5"
-```
+**In the IDE** — open [`src/Bronnoysund.WebApi/Bronnoysund.WebApi.http`](src/Bronnoysund.WebApi/Bronnoysund.WebApi.http) in JetBrains Rider or VS Code (with the REST Client extension); each request is one click.
 
 ## Run tests
 
@@ -250,15 +222,7 @@ curl -s "https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainer
 dotnet test
 ```
 
-~77 tests across four test projects:
-
-- `Bronnoysund.Domain.Tests` — organisation-number validation (MOD11, normalisation, edge cases)
-- `Bronnoysund.Application.Tests` — handler behaviour with mocked port, search-paging, cancellation
-- `Bronnoysund.Infrastructure.Tests` — `BrregHttpClient` with WireMock stubs, search, mapping, caching round-trips
-- `Bronnoysund.ViewModels.Tests` — localisation parity (en / nb-NO / nn-NO)
-
-Total run time: under 1 s after first build. No real Brønnøysund call needed
-for the test suite.
+77 tests across four projects, total runtime under one second. No real Brønnøysund call during CI — integration tests use WireMock.Net to stub the HTTP layer deterministically.
 
 ## Architecture
 
@@ -275,67 +239,85 @@ Domain ← Application ← Infrastructure
 | Layer | Responsibility | Outside dependencies |
 | --- | --- | --- |
 | `Domain` | `OrganizationNumber` value object, `Company` entity, `LanguageForm` enum | None (.NET BCL only) |
-| `Application` | Use cases (`LookupCompanyHandler`, `SearchCompaniesByNameHandler`), ports (`ICompanyProvider`, `ICompanySearchProvider`), validators, result discriminated union | Domain only |
+| `Application` | Use cases (`LookupCompanyHandler`, `SearchCompaniesByNameHandler`), ports (`ICompanyProvider`, `ICompanySearchProvider`), result discriminated union | Domain only |
 | `Infrastructure` | `BrregHttpClient` + DTOs, `CachingCompanyProvider` decorator, Polly resilience, HybridCache | Application + HTTP + caching libs |
 | `WebApi` | Minimal API endpoints (`/companies/{orgnr}`, `/companies?name=`, `/health`) | Application + Infrastructure |
 | `ViewModels` | `CompanyLookupViewModel` (MVVM), localised strings | Application |
-| `Components` | Razor pages (`Lookup`, `Settings`) with MudBlazor | ViewModels + MudBlazor |
-| `BlazorWeb` | Server-mode host, cookie-based culture switcher, request localisation | Components + ViewModels + Application + Infrastructure |
+| `Components` | Razor pages (`Lookup`) with MudBlazor | ViewModels + MudBlazor |
+| `BlazorWeb` | Server-mode host, cookie-based culture switcher, request localisation, `/api/companies/{orgnr}` JSON endpoint | Components + ViewModels + Application + Infrastructure |
 
-## Key design choices
+### Key design choices
 
-### Validation in Domain
+**Validation in Domain.** `OrganizationNumber.TryCreate` enforces the 9-digit rule, the 8/9 prefix rule, and the MOD11 control digit before any HTTP call. The assignment only required the first two rules; MOD11 is a free quality win that prevents one wasted roundtrip per invalid input.
 
-`OrganizationNumber.TryCreate` enforces the 9-digit rule, the 8/9 prefix rule,
-and the MOD11 control digit before any HTTP call. The assignment only required
-the first two rules; MOD11 is a free quality win that prevents one wasted
-roundtrip per invalid input.
+**Caching as a decorator.** `CachingCompanyProvider` wraps the real `BrregCompanyProvider` and uses `HybridCache` (L1 in-process) with a 24 h default TTL. The decorator pattern keeps the caching concern out of the handler and trivially supports swapping for a distributed L2 (Redis) later — `HybridCache` supports both layers behind the same API. `CachingCompanySearchProvider` mirrors the pattern with a 5 min TTL keyed by `(query, page-size, page)`.
 
-### Caching as a decorator
+**Resilience via Polly v8.** `AddStandardResilienceHandler()` on the typed `HttpClient` gives retry with jitter, per-attempt timeout, circuit breaker, and rate limiter — all Microsoft-recommended defaults. On unrecoverable failure `BrregUnavailableException` surfaces as HTTP 503 from the WebApi and a "Registry unavailable" alert in the Blazor UI.
 
-`CachingCompanyProvider` wraps the real `BrregCompanyProvider` and uses
-`HybridCache` (L1 in-process) with a 24 h default TTL. The decorator pattern
-keeps the caching concern out of the handler and trivially supportable to
-swap for a distributed L2 (Redis) later — `HybridCache` supports both layers
-behind the same API.
+**Discriminated union for outcomes.** `CompanyLookupResult` is a sealed abstract base with `Found`, `NotFound`, `InvalidInput`, `Unavailable` subtypes. Pattern-matching maps each to the right HTTP status (200, 404, 400, 503) — no exception-throwing for control flow. Business outcomes get a tag, not a stack trace.
 
-### Resilience via Polly v8
+**Localisation without a database.** The Blazor frontend supports English, Bokmål, and Nynorsk. The language switcher writes a culture cookie via a minimal `/set-culture` endpoint; `UseRequestLocalization` reads it on the next request. No database, no session state, no JS interop — pure ASP.NET Core primitives.
 
-`AddStandardResilienceHandler()` on the typed `HttpClient` gives retry with
-jitter, per-attempt timeout, circuit breaker, and rate limiter — all
-Microsoft-recommended defaults. On unrecoverable failure
-`BrregUnavailableException` surfaces as HTTP 503 from the WebApi and a
-"Registry unavailable" alert in the Blazor UI.
+**Shared view-model across host + layout.** `CompanyLookupViewModel` is registered as Scoped (per Blazor Server circuit) so the layout (`MainLayout`) and the page (`Lookup`) share the same instance. That's what lets the title-click handler call `VM.Reset()` and see the page update immediately, without re-navigation.
 
-### Discriminated union for outcomes
+## Brreg coverage
 
-`CompanyLookupResult` is a sealed abstract base with `Found`, `NotFound`,
-`InvalidInput`, `Unavailable` subtypes. Pattern-matching maps each to the
-right HTTP status (200, 404, 400, 503) — no exception-throwing for control
-flow. Business outcomes get a tag, not a stack trace.
+The Brønnøysund Register Centre exposes ~50 endpoints across eight registries on the umbrella docs at <https://brreg.github.io/docs/>. This MVP uses two of them. The architecture is set up so each new endpoint is one adapter in `Infrastructure` with no ripple into the use-case handlers or UI.
 
-### Localisation without a database
+### Used today (`Enhetsregisteret`, no auth)
 
-The Blazor frontend supports English, Bokmål, and Nynorsk. The language
-switcher writes a culture cookie via a minimal `/set-culture` endpoint;
-`UseRequestLocalization` reads it on the next request. No database, no
-session state, no JS interop — pure ASP.NET Core primitives.
+| Endpoint | In code? | In UI? |
+| --- | --- | --- |
+| `GET /enheter/{orgnr}` | ✓ via `BrregCompanyProvider` | ✓ Lookup page, orgnr mode |
+| `GET /enheter?navn=...` (paginated) | ✓ via `BrregCompanySearchProvider` | ✓ Lookup page, name mode |
+
+### Adjacent extensions inside `Enhetsregisteret` (also no auth)
+
+| Endpoint | What it adds | Effort |
+| --- | --- | --- |
+| `GET /enheter/{orgnr}/roller` | Roles (board, CEO, signature authority) | 1 new DTO + 1 endpoint + UI tab |
+| `GET /enheter/{orgnr}/underenheter` | Sub-units / branches | Tree visualisation for conglomerates |
+| `GET /enheter/lastet-ned/oppdateringer` | Change feed since timestamp | Event-driven cache invalidation |
+| `GET /organisasjonsformer` | Code → description (AS = Aksjeselskap) | Tooltip / human-readable labels |
+
+### Other Brreg registries (system-of-systems)
+
+| Registry | Auth | Use case |
+| --- | --- | --- |
+| **Foretaksregisteret** | None | Verify a company is registered for legal/commercial activity |
+| **Reelle rettighetshavere** | Maskinporten | Beneficial-ownership lookups (AML, KYC). Restricted access. |
+| **Regnskapsregisteret** | Maskinporten | Pull the latest annual report on demand |
+| **Løsøreregisteret** | None | Pledges and liens on vehicles, equipment, chattels |
+| **Ektepaktregisteret** | Person-scoped | Prenuptial agreements (rare consumer scenario) |
+
+The sister project [Bronnoysund.Lookup](https://github.com/erlingsm/Bronnoysund.Lookup) is the natural home for this multi-registry expansion. This MVP keeps the surface tight to the assignment.
+
+## API integration choices
+
+### Why hand-coded `BrregHttpClient` and not Kiota / NSwag from the OpenAPI spec?
+
+A deliberate trade-off given the scope of this MVP.
+
+| Approach | Lines committed to repo | Covers only what we use |
+| --- | --- | --- |
+| [Kiota](https://learn.microsoft.com/openapi/kiota/overview) (default) | ~8 000 | ❌ Whole Brreg API (~50 endpoints, ~200 DTOs) |
+| [NSwag](https://github.com/RicoSuter/NSwag) (default) | ~3 000 | ❌ Whole Brreg API |
+| [Refit](https://github.com/reactiveui/refit) (interface) | ~20 | ✓ Only what we declare |
+| **Hand-coded (chosen)** | ~150 | ✓ Only what we use |
+
+We use **2 endpoints** out of ~50 in Brreg's spec. Code generation would put 4 000+ lines of auto-generated code in the repo for surfaces we never call — every regeneration would be a 4 000-line diff in code review, IDE search would hit `Generated/` files for unrelated endpoints, and a new reader would have to learn which folder bugs do _not_ live in.
+
+Schema drift is caught by the WireMock-stubbed integration tests (`Status404_ReturnsNull`, `Status410Gone_ReturnsNull`, mapping tests) deterministically — we don't need a regenerator to notice when Brreg changes a field.
+
+**When we'd switch**: when the surface grows past ~20 endpoints, or when another team consumes Brreg DTOs as a public contract. For the sister project ([Bronnoysund.Lookup](https://github.com/erlingsm/Bronnoysund.Lookup)) — a multi-registry aggregator that also pulls from Skatteetaten, SSB and others — Kiota would be the right call from day one.
 
 ## Deploy
 
-Two Azure Container Apps (region `norwayeast`): **BlazorWeb** (UI + `/api`)
-and **WebApi** (JSON only). Both are deployed by a single GitHub Actions
-workflow on push to `master`, gated on a green test job. OIDC + Federated
-Credential — no client-secret stored anywhere.
+Two Azure Container Apps (region `norwayeast`): **BlazorWeb** (UI + `/api`) and **WebApi** (JSON only). Both are deployed by a single GitHub Actions workflow on push to `master`, gated on a green test job. OIDC + Federated Credential — no client-secret stored anywhere.
 
-See [deploy/README.md](deploy/README.md) for the full pipeline (CI/CD vs.
-local manual via `deploy/deploy.sh`, RBAC setup, branch protection).
+See [deploy/README.md](deploy/README.md) for the full pipeline (CI/CD vs. local manual via `deploy/deploy.sh`, RBAC setup, branch protection).
 
-The architecture is host-agnostic. Application + Infrastructure layers have
-zero runtime-specific dependencies; other validated targets are App Service
-Linux (when VM quota allows), any glibc 2.31+ Linux behind Nginx/Apache as
-a reverse proxy (Blazor SignalR needs WebSocket upgrade headers), or local
-`dotnet run`.
+The architecture is host-agnostic. Application + Infrastructure layers have zero runtime-specific dependencies; other validated targets are Azure App Service Linux (when VM quota allows), any glibc 2.31+ Linux behind Nginx/Apache as a reverse proxy (Blazor SignalR needs WebSocket upgrade headers), or local `dotnet run`.
 
 ## Credits
 
@@ -348,63 +330,15 @@ Brønnøysundregistrene maintains the authoritative resources this MVP integrate
 - **Enhetsregisteret API documentation** (the one register we currently call): <https://data.brreg.no/enhetsregisteret/api/dokumentasjon/no/index.html>
 - **Enhetsregisteret OpenAPI 3 specification**: <https://data.brreg.no/81088a24-8b8d-4b8f-b7be-0b03932bcb91>
 
-The OpenAPI spec is the contract we wrote our `BrregHttpClient` and DTOs against. See the [API integration choices](#api-integration-choices) section for why we hand-rolled the client instead of generating from the spec.
+Data from Brønnøysundregistrene is licensed under [NLOD 2.0](https://data.norge.no/nlod/).
 
 ### Secondary inspirations
 
-Third-party C# libraries reviewed for patterns:
+Third-party C# libraries reviewed for patterns (no code copied — own implementation per the assignment):
 
 - [Frank.Libraries.Brreg](https://github.com/frankhenrichdamgaard/Frank.Libraries) — Brreg lookup patterns
 - [organisationsnummer/csharp](https://github.com/organisationsnummer/csharp) — MOD11 reference
 - [SindreMA](https://github.com/SindreMA) — Brreg endpoint exploration
-
-## API integration choices
-
-### Why hand-rolled `BrregHttpClient` and not Kiota / NSwag from the OpenAPI spec?
-
-A deliberate trade-off given the scope of this MVP.
-
-| Approach | Lines committed to repo | Covers only what we use |
-| --- | --- | --- |
-| [Kiota](https://learn.microsoft.com/openapi/kiota/overview) (default) | ~8 000 | ❌ Whole Brreg API (~50 endpoints, ~200 DTOs) |
-| [NSwag](https://github.com/RicoSuter/NSwag) (default) | ~3 000 | ❌ Whole Brreg API |
-| [Refit](https://github.com/reactiveui/refit) (interface) | ~20 | ✓ Only what we declare |
-| **Hand-rolled (chosen)** | ~150 | ✓ Only what we use |
-
-We use **2 endpoints** out of ~50 in Brreg's spec. Code generation would put 4 000+ lines of auto-generated code in the repo for surfaces we never call — every regeneration would be a 4 000-line diff in code review, IDE search would hit `Generated/` files for unrelated endpoints, and a new reader would have to learn which folder bugs do _not_ live in.
-
-Schema drift is caught by the WireMock-stubbed integration tests (`Status404_ReturnsNull`, `Status410Gone_ReturnsNull`, mapping tests) deterministically — we don't need a regenerator to notice when Brreg changes a field.
-
-**When we'd switch**: when the surface grows past ~20 endpoints, or when another team consumes Brreg DTOs as a public contract. For the sister project ([Bronnoysund.Lookup](https://github.com/erlingsm/Bronnoysund.Lookup)) — a multi-registry aggregator that also pulls from Skatteetaten, SSB and others — Kiota would be the right call from day one.
-
-## Future scope
-
-This MVP integrates with a deliberately narrow slice of the Brønnøysund Register Centre — `GET /enheter/{orgnr}` and `GET /enheter?navn=` on Enhetsregisteret. The umbrella docs at <https://brreg.github.io/docs/> describe **eight registries plus Maskinporten and Altinn integration patterns**. Each one would be a new `IXxxProvider` port in `Application/Ports` with a matching adapter in `Infrastructure` — the use-case handlers and UI would not need to change.
-
-### Adjacent extensions inside Enhetsregisteret (no auth needed)
-
-| Endpoint | What it adds | Effort |
-| --- | --- | --- |
-| `GET /enheter/{orgnr}/roller` | Roles (board, CEO, signature authority) per entity | 1 new DTO + 1 endpoint + UI tab |
-| `GET /enheter/{orgnr}/underenheter` | Sub-units / branches | Tree visualisation for conglomerates |
-| `GET /enheter/lastet-ned/oppdateringer` | Change feed since timestamp | Event-driven cache invalidation, "what changed for orgnr X since I last looked?" |
-| `GET /organisasjonsformer` | Code → description (AS = Aksjeselskap) | Tooltip / human-readable labels |
-
-### Other registries (full system-of-systems integration)
-
-| Registry | Auth | Use case |
-| --- | --- | --- |
-| **Foretaksregisteret** | None | Verify a company is registered for legal/commercial activity (relevant for AS / ASA / SE) |
-| **Reelle rettighetshavere** | Maskinporten | Beneficial-ownership lookups (AML, KYC). Restricted to qualified consumers. |
-| **Regnskapsregisteret** | Maskinporten | Pull the latest annual report on demand |
-| **Løsøreregisteret** | None | Pledges and liens on vehicles, equipment, chattels |
-| **Ektepaktregisteret** | Person-scoped | Prenuptial agreements (rare consumer scenario) |
-
-### What's already designed-in for these extensions
-
-- **Port-and-adapter boundary** — `Application` defines what we need from a registry; `Infrastructure` provides it. Adding a new registry adapter doesn't ripple into the use-case handlers.
-- **Caching as a decorator** — the same `HybridCache` pattern (`CachingCompanyProvider`, `CachingCompanySearchProvider`) drops onto any new adapter without modifying the underlying HTTP client.
-- **Polly standard resilience handler** — applied per typed `HttpClient`, so each new registry gets retry + circuit breaker + timeout out of the box.
 
 ## License
 
