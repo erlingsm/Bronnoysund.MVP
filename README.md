@@ -1,6 +1,6 @@
 # Bronnoysund.MVP
 
-MVP delivery for the Brreg Company Lookup home assignment.
+MVP delivery for the Brreg Company showcasing a simple lookup.
 Given a Norwegian organisation number, looks up the company in the Brønnøysund
 Enhetsregisteret and returns a simplified English response. Includes a Blazor
 Server web frontend with English / Bokmål / Nynorsk language switching and a
@@ -25,6 +25,112 @@ name-search extension.
 - **HybridCache** for in-process cache with 24 h TTL
 - **Serilog** for structured logging (console + rolling file)
 - **MSTest + FluentAssertions + NSubstitute + WireMock.Net** for testing
+
+## API
+
+Two hosts expose the same JSON API. Same handler, same caching, same response shape — different paths and one has a UI:
+
+| Host | Base URL | UI? | JSON path prefix |
+| --- | --- | --- | --- |
+| **BlazorWeb** | <https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io> | Yes | `/api` |
+| **WebApi** | <https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io> | No | _(root)_ |
+
+### Endpoints
+
+| Method | Path (BlazorWeb) | Path (WebApi) | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/api/companies/{orgnr}` | `/companies/{orgnr}` | Look up by organisation number |
+| `GET` | _(not exposed)_ | `/companies?name={q}&size={N}&page={P}` | Paginated name search |
+| `GET` | _(not exposed)_ | `/health` | Liveness probe |
+
+The BlazorWeb host keeps its surface minimal — the UI uses its own internal handlers and only exposes the orgnr lookup as JSON. The WebApi host is the full REST surface.
+
+### Response — `GET /companies/{orgnr}` (200 OK)
+
+The four PDF-required fields at the top, optional `details` sub-object with bonus fields from the Brreg payload:
+
+```json
+{
+  "organizationNumber": "919300388",
+  "organizationName": "ARTISAN CONSULTING AS",
+  "companyType": "AS",
+  "languageForm": "Bokmål",
+  "details": {
+    "businessAddress": {
+      "streetAddress": "Brynsveien 12",
+      "postalCode": "0667",
+      "city": "OSLO",
+      "municipality": "OSLO",
+      "country": "Norge"
+    },
+    "primaryIndustry": { "code": "62.100", "description": "Dataprogrammeringstjenester" },
+    "employeeCount": 11,
+    "sectorCode": "2100",
+    "sectorDescription": "Private aksjeselskaper mv.",
+    "foundingDate": "2017-07-17",
+    "registeredDate": "2017-07-17",
+    "registeredInVatRegistry": true,
+    "registeredInBusinessRegistry": true,
+    "isBankrupt": false
+  }
+}
+```
+
+Null fields (`website`, `email`, etc.) are omitted from the serialised JSON (`DefaultIgnoreCondition = WhenWritingNull`).
+
+### Response — `GET /companies?name=...` (200 OK)
+
+```json
+{
+  "hits": [
+    { "organizationNumber": "971032081", "name": "STATENS VEGVESEN", "organizationFormCode": "ORGL", "postalCity": "LILLEHAMMER" },
+    { "organizationNumber": "987659025", "name": "TEKNA STATENS VEGVESEN", "organizationFormCode": "FLI", "postalCity": "OSLO" }
+  ],
+  "totalElements": 142,
+  "page": 0,
+  "totalPages": 6,
+  "pageSize": 25
+}
+```
+
+Default page size is 25, configurable per request via `?size=10|25|50|100`. Page index is 0-based (`?page=0` is the first page). The search cache keeps each `(query, size, page)` combination warm for 5 minutes so paging within a session is free of Brreg roundtrips.
+
+### Status codes
+
+| Code | Meaning | Body |
+| --- | --- | --- |
+| `200` | Found / OK | The response objects above |
+| `400` | Invalid input (validation failed) | `{ "error": "invalid_input", "message": "Organization number must be exactly 9 digits (got 5)." }` |
+| `404` | Unknown orgnr (Brreg returned 404 or 410 "Gone") | `{ "error": "not_found", "message": "No company with organization number 919300389 was found." }` |
+| `503` | Brreg unreachable / timed out / 5xx after Polly retries | `ProblemDetails` JSON with `title` + `detail` |
+| `500` | Unexpected internal error | `ProblemDetails` |
+
+### Testing the API
+
+**Live** (curl-cookbook):
+
+```bash
+# Happy path — orgnr lookup
+curl -s https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io/api/companies/919300388 | python3 -m json.tool
+curl -s https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/companies/919300388 | python3 -m json.tool
+
+# Happy path — name search with pagination
+curl -s "https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/companies?name=Statens+vegvesen&size=10&page=0" | python3 -m json.tool
+
+# Invalid input → 400
+curl -sw "\nHTTP %{http_code}\n" https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/companies/12345
+
+# Health
+curl -s https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/health
+```
+
+**Locally** — see [Run locally](#run-locally) below for the `dotnet run` commands.
+
+**Curated test inputs** (orgnr that hit each path, search queries that exercise pagination) — see [Demo guide](#demo-guide).
+
+**In the IDE** — open [`src/Bronnoysund.WebApi/Bronnoysund.WebApi.http`](src/Bronnoysund.WebApi/Bronnoysund.WebApi.http) in JetBrains Rider or VS Code with the REST Client extension; each request is one click.
+
+**Automated** — `dotnet test` runs 77 tests against a WireMock-stubbed Brreg, including HTTP-status mapping, MOD11 edge cases, search pagination, and cache round-trips. No live Brreg calls during CI.
 
 ## Run locally
 
@@ -196,7 +302,7 @@ a reverse proxy (Blazor SignalR needs WebSocket upgrade headers), or local
 
 ## Credits
 
-Inspired by (no code copied — own implementation per the assignment):
+Inspired by:
 
 - [Frank.Libraries.Brreg](https://github.com/frankhenrichdamgaard/Frank.Libraries) — Brreg lookup patterns
 - [organisationsnummer/csharp](https://github.com/organisationsnummer/csharp) — MOD11 reference
