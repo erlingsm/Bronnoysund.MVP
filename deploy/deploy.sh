@@ -84,15 +84,20 @@ deploy_app() {
         --query "properties.latestRevisionName" \
         -o tsv
 
-    echo "==> [${app}] Smoke test"
-    sleep 10
-    local code
-    code="$(curl -fsS --max-time 30 -o /dev/null -w "%{http_code}" "${url}${smoke_path}" || echo "000")"
-    if [[ "$code" != "200" ]]; then
-        echo "[${app}] WARN: smoke test got HTTP ${code} on ${smoke_path} (revision may still be warming up)" >&2
-        return 1
-    fi
-    echo "[${app}] Live: ${url}${smoke_path} → ${code}"
+    echo "==> [${app}] Smoke test (up to ~2 min for cold start)"
+    local code="000"
+    local i
+    for i in $(seq 1 12); do
+        code="$(curl -fsS --max-time 10 -o /dev/null -w "%{http_code}" "${url}${smoke_path}" 2>/dev/null || echo "000")"
+        if [[ "$code" == "200" ]]; then
+            echo "[${app}] Live: ${url}${smoke_path} → ${code} (attempt ${i})"
+            return 0
+        fi
+        echo "[${app}] Attempt ${i}: HTTP ${code} — waiting 10s..."
+        sleep 10
+    done
+    echo "[${app}] WARN: smoke test failed after 12 attempts on ${smoke_path} (final HTTP ${code})" >&2
+    return 1
 }
 
 # BlazorWeb is the always-deployed primary app

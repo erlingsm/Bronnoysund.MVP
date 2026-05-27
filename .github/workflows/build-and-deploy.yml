@@ -77,15 +77,20 @@ jobs:
 
       - name: Smoke test
         run: |
-          sleep 15
           URL="https://${APP}.${ENV_DOMAIN}"
-          HTTP_CODE="$(curl -fsS --max-time 30 -o /dev/null -w "%{http_code}" "$URL/" || echo "000")"
-          if [[ "$HTTP_CODE" != "200" ]]; then
-            echo "Smoke test failed: HTTP $HTTP_CODE" >&2
-            exit 1
-          fi
-          echo "Live: $URL ($HTTP_CODE)"
-          echo "DEPLOY_URL=$URL" >> "$GITHUB_ENV"
+          HTTP_CODE="000"
+          for i in $(seq 1 12); do
+            HTTP_CODE="$(curl -fsS --max-time 10 -o /dev/null -w "%{http_code}" "$URL/" 2>/dev/null || echo "000")"
+            if [[ "$HTTP_CODE" == "200" ]]; then
+              echo "Live: $URL ($HTTP_CODE) after ${i} attempt(s)"
+              echo "DEPLOY_URL=$URL" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $HTTP_CODE — waiting 10s..."
+            sleep 10
+          done
+          echo "Smoke test failed after 12 attempts (~2 min): final HTTP $HTTP_CODE" >&2
+          exit 1
 
       - name: Deploy summary
         if: success()
@@ -150,15 +155,20 @@ jobs:
       - name: Smoke test
         if: steps.precheck.outputs.exists == 'true'
         run: |
-          sleep 15
           URL="https://${APP}.${ENV_DOMAIN}"
-          HTTP_CODE="$(curl -fsS --max-time 30 -o /dev/null -w "%{http_code}" "$URL/health" || echo "000")"
-          if [[ "$HTTP_CODE" != "200" ]]; then
-            echo "Smoke test failed: HTTP $HTTP_CODE on /health" >&2
-            exit 1
-          fi
-          echo "Live: $URL/health ($HTTP_CODE)"
-          echo "DEPLOY_URL=$URL" >> "$GITHUB_ENV"
+          HTTP_CODE="000"
+          for i in $(seq 1 12); do
+            HTTP_CODE="$(curl -fsS --max-time 10 -o /dev/null -w "%{http_code}" "$URL/health" 2>/dev/null || echo "000")"
+            if [[ "$HTTP_CODE" == "200" ]]; then
+              echo "Live: $URL/health ($HTTP_CODE) after ${i} attempt(s)"
+              echo "DEPLOY_URL=$URL" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $HTTP_CODE on /health — waiting 10s..."
+            sleep 10
+          done
+          echo "Smoke test failed after 12 attempts (~2 min): final HTTP $HTTP_CODE" >&2
+          exit 1
 
       - name: Deploy summary
         if: steps.precheck.outputs.exists == 'true' && success()
