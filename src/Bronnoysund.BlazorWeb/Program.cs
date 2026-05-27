@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 using Bronnoysund.Application;
+using Bronnoysund.Application.Results;
+using Bronnoysund.Application.UseCases.LookupCompany;
 using Bronnoysund.BlazorWeb.Components;
 using Bronnoysund.Infrastructure;
 using Bronnoysund.ViewModels;
@@ -43,7 +45,9 @@ try
     builder.Services.AddBronnoysundApplication();
     builder.Services.AddBronnoysundInfrastructure(builder.Configuration);
 
-    builder.Services.AddTransient<CompanyLookupViewModel>();
+    // Scoped (per-circuit) so the title-click reset reaches the same VM instance the
+    // Lookup page is bound to. Transient would give MainLayout a different VM than the page.
+    builder.Services.AddScoped<CompanyLookupViewModel>();
 
     var app = builder.Build();
 
@@ -92,6 +96,37 @@ try
                 Path = "/"
             });
         return Results.LocalRedirect(redirectUri);
+    });
+
+    // JSON API endpoint exposed at /api/companies/{orgnr} so the deployed host satisfies the
+    // assignment's "return a response object with the four English fields" requirement directly,
+    // without a separate WebApi deployment. Same handler, same caching, same result-union
+    // pattern-match the WebApi project uses — just on the BlazorWeb host.
+    app.MapGet("/api/companies/{orgnr}", async (
+        string orgnr,
+        LookupCompanyHandler handler,
+        CancellationToken ct) =>
+    {
+        var result = await handler.HandleAsync(new LookupCompanyQuery(orgnr), ct);
+        return result switch
+        {
+            CompanyLookupResult.Found f => Results.Ok(f.Company),
+            CompanyLookupResult.NotFound nf => Results.NotFound(new
+            {
+                error = "not_found",
+                message = $"No company with organization number {nf.OrganizationNumber} was found."
+            }),
+            CompanyLookupResult.InvalidInput inv => Results.BadRequest(new
+            {
+                error = "invalid_input",
+                message = inv.Message
+            }),
+            CompanyLookupResult.Unavailable unav => Results.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Brønnøysundregistrene (the Brønnøysund Register Centre) is temporarily unavailable",
+                detail: unav.Message),
+            _ => Results.Problem("Unexpected result type.")
+        };
     });
 
     Log.Information("Bronnoysund.BlazorWeb starting on {Urls}", string.Join(", ", app.Urls));

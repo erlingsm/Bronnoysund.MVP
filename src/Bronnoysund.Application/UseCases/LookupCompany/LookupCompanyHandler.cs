@@ -26,6 +26,10 @@ public sealed class LookupCompanyHandler(
         }
 
         logger.LogInformation("Looking up orgnr {OrgNumber}", orgNumber.Value);
-        return await provider.LookupAsync(orgNumber, ct);
+        var result = await provider.LookupAsync(orgNumber, ct);
+        logger.LogInformation(
+            "Lookup for {OrgNumber} completed with outcome {Outcome}",
+            orgNumber.Value, result.GetType().Name);
+        return result;
     }
 }
