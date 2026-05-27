@@ -1,6 +1,6 @@
 # Bronnoysund.MVP
 
-MVP delivery for the Brreg Company showcasing a simple lookup.
+MVP delivery for the Brreg Company showcasing a simple lookup against the Register.
 Given a Norwegian organisation number, looks up the company in the Brønnøysund
 Enhetsregisteret and returns a simplified English response. Includes a Blazor
 Server web frontend with English / Bokmål / Nynorsk language switching and a
@@ -352,7 +352,7 @@ The OpenAPI spec is the contract we wrote our `BrregHttpClient` and DTOs against
 
 ### Secondary inspirations
 
-Third-party C# libraries reviewed for patterns (no code copied — own implementation per the assignment):
+Third-party C# libraries reviewed for patterns:
 
 - [Frank.Libraries.Brreg](https://github.com/frankhenrichdamgaard/Frank.Libraries) — Brreg lookup patterns
 - [organisationsnummer/csharp](https://github.com/organisationsnummer/csharp) — MOD11 reference
@@ -405,8 +405,6 @@ This MVP integrates with a deliberately narrow slice of the Brønnøysund Regist
 - **Port-and-adapter boundary** — `Application` defines what we need from a registry; `Infrastructure` provides it. Adding a new registry adapter doesn't ripple into the use-case handlers.
 - **Caching as a decorator** — the same `HybridCache` pattern (`CachingCompanyProvider`, `CachingCompanySearchProvider`) drops onto any new adapter without modifying the underlying HTTP client.
 - **Polly standard resilience handler** — applied per typed `HttpClient`, so each new registry gets retry + circuit breaker + timeout out of the box.
-
-The sister project [Bronnoysund.Lookup](https://github.com/erlingsm/Bronnoysund.Lookup) is the natural home for this multi-registry expansion. This MVP keeps the surface tight to the assignment.
 
 ## License
 
