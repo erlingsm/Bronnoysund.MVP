@@ -153,6 +153,43 @@ curl "http://localhost:5000/companies?name=Statens+vegvesen&size=5"
 Both hosts hit Brønnøysund directly (no DB, no separate API tier — the
 Application + Infrastructure layers are shared between them).
 
+## UI features
+
+What the user sees when interacting with the deployed BlazorWeb:
+
+### Lookup mode toggle
+
+Radio buttons at the top of the form switch between **organisation-number lookup** and **name search**. Each mode has its own input + button.
+
+### Paginated name search
+
+When a name search returns more hits than fit on one page, three controls appear under the result table:
+
+- **`Page X of Y · N hits total`** — caption with current page, total pages, and total result count, straight from Brreg's page metadata.
+- **`MudPagination`** — page navigator (`< 1 2 3 ... >`). Only shown when `TotalPages > 1`.
+- **`Hits per page`** dropdown — `10 / 25 / 50 / 100`. Default 25. Changing the value re-runs the search at page 0 with the new size.
+
+The result list is cached for 5 minutes per `(query, page-size, page)` combination via `HybridCache`. Paging back and forth across pages you've already seen does not hit Brreg.
+
+### JSON flip-view on the detail card
+
+Once a single company is shown (either via orgnr lookup or by drilling into a search hit), a small icon button appears in the **bottom-right corner of the detail card**.
+
+- Click the `<>` icon → the card flips with a 0.6 s `rotateY` animation to show the same data as raw JSON, formatted line-by-line — the exact shape the JSON API returns.
+- Click the `👁` icon on the back of the card → flips back to the structured view.
+
+Useful for demoing the API contract without leaving the UI.
+
+### Title click resets the form
+
+Clicking **"Virksomhetsinformasjon fra Brønnøysundregistrene"** (or its English / Nynorsk equivalent) in the app-bar clears every form field, error, status message, search result and pagination state — and navigates the browser back to `/`.
+
+The HybridCache layer in Infrastructure is untouched, so the next search or lookup for something you've already queried is still served from cache.
+
+### Language switcher
+
+Hamburger menu (top-right of app-bar) → choose **English / Norsk / Nynorsk**. Selection is persisted via a cookie set by a `/set-culture` endpoint (closed allowlist + `Results.LocalRedirect` for safety), so the choice survives reloads.
+
 ## Demo guide
 
 A curated set of inputs to exercise each path during a live demo.
