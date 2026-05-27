@@ -343,9 +343,10 @@ a reverse proxy (Blazor SignalR needs WebSocket upgrade headers), or local
 
 Brønnøysundregistrene maintains the authoritative resources this MVP integrates with:
 
+- **Umbrella developer docs**: <https://brreg.github.io/docs/> — canonical hub for the whole Brreg ecosystem (8 registries + Maskinporten + Altinn integration patterns)
 - **GitHub org**: <https://github.com/orgs/brreg/repositories> — Brreg's own open-source clients and tooling
-- **API documentation**: <https://data.brreg.no/enhetsregisteret/api/dokumentasjon/no/index.html>
-- **OpenAPI specification**: <https://data.brreg.no/81088a24-8b8d-4b8f-b7be-0b03932bcb91>
+- **Enhetsregisteret API documentation** (the one register we currently call): <https://data.brreg.no/enhetsregisteret/api/dokumentasjon/no/index.html>
+- **Enhetsregisteret OpenAPI 3 specification**: <https://data.brreg.no/81088a24-8b8d-4b8f-b7be-0b03932bcb91>
 
 The OpenAPI spec is the contract we wrote our `BrregHttpClient` and DTOs against. See the [API integration choices](#api-integration-choices) section for why we hand-rolled the client instead of generating from the spec.
 
@@ -375,6 +376,37 @@ We use **2 endpoints** out of ~50 in Brreg's spec. Code generation would put 4 0
 Schema drift is caught by the WireMock-stubbed integration tests (`Status404_ReturnsNull`, `Status410Gone_ReturnsNull`, mapping tests) deterministically — we don't need a regenerator to notice when Brreg changes a field.
 
 **When we'd switch**: when the surface grows past ~20 endpoints, or when another team consumes Brreg DTOs as a public contract. For the sister project ([Bronnoysund.Lookup](https://github.com/erlingsm/Bronnoysund.Lookup)) — a multi-registry aggregator that also pulls from Skatteetaten, SSB and others — Kiota would be the right call from day one.
+
+## Future scope
+
+This MVP integrates with a deliberately narrow slice of the Brønnøysund Register Centre — `GET /enheter/{orgnr}` and `GET /enheter?navn=` on Enhetsregisteret. The umbrella docs at <https://brreg.github.io/docs/> describe **eight registries plus Maskinporten and Altinn integration patterns**. Each one would be a new `IXxxProvider` port in `Application/Ports` with a matching adapter in `Infrastructure` — the use-case handlers and UI would not need to change.
+
+### Adjacent extensions inside Enhetsregisteret (no auth needed)
+
+| Endpoint | What it adds | Effort |
+| --- | --- | --- |
+| `GET /enheter/{orgnr}/roller` | Roles (board, CEO, signature authority) per entity | 1 new DTO + 1 endpoint + UI tab |
+| `GET /enheter/{orgnr}/underenheter` | Sub-units / branches | Tree visualisation for conglomerates |
+| `GET /enheter/lastet-ned/oppdateringer` | Change feed since timestamp | Event-driven cache invalidation, "what changed for orgnr X since I last looked?" |
+| `GET /organisasjonsformer` | Code → description (AS = Aksjeselskap) | Tooltip / human-readable labels |
+
+### Other registries (full system-of-systems integration)
+
+| Registry | Auth | Use case |
+| --- | --- | --- |
+| **Foretaksregisteret** | None | Verify a company is registered for legal/commercial activity (relevant for AS / ASA / SE) |
+| **Reelle rettighetshavere** | Maskinporten | Beneficial-ownership lookups (AML, KYC). Restricted to qualified consumers. |
+| **Regnskapsregisteret** | Maskinporten | Pull the latest annual report on demand |
+| **Løsøreregisteret** | None | Pledges and liens on vehicles, equipment, chattels |
+| **Ektepaktregisteret** | Person-scoped | Prenuptial agreements (rare consumer scenario) |
+
+### What's already designed-in for these extensions
+
+- **Port-and-adapter boundary** — `Application` defines what we need from a registry; `Infrastructure` provides it. Adding a new registry adapter doesn't ripple into the use-case handlers.
+- **Caching as a decorator** — the same `HybridCache` pattern (`CachingCompanyProvider`, `CachingCompanySearchProvider`) drops onto any new adapter without modifying the underlying HTTP client.
+- **Polly standard resilience handler** — applied per typed `HttpClient`, so each new registry gets retry + circuit breaker + timeout out of the box.
+
+The sister project [Bronnoysund.Lookup](https://github.com/erlingsm/Bronnoysund.Lookup) is the natural home for this multi-registry expansion. This MVP keeps the surface tight to the assignment.
 
 ## License
 

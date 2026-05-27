@@ -486,6 +486,32 @@ GitHub Actions ──[OIDC token]──► Azure AD ──► [federated credent
 </section>
 
 <section>
+    <h2>Brreg-økosystemet vi <em>kunne</em> utvidet til</h2>
+    <p class="muted">Vi brukte Enhetsregisteret. <a href="https://brreg.github.io/docs/">brreg.github.io/docs/</a> dokumenterer åtte registre — port-and-adapter-arkitekturen åpner for å legge dem til som nye <code>I*Provider</code>-implementasjoner.</p>
+
+    <h3>Lett utvidelse innenfor Enhetsregisteret (åpent API)</h3>
+    <table style="margin-top: 0.3em;">
+        <tr><th>Endepunkt</th><th>Hva det gir</th></tr>
+        <tr><td><code>/enheter/{orgnr}/roller</code></td><td>Styre, daglig leder, signaturmyndighet</td></tr>
+        <tr><td><code>/enheter/{orgnr}/underenheter</code></td><td>Datterselskap / avdelinger</td></tr>
+        <tr><td><code>/enheter/lastet-ned/oppdateringer</code></td><td>Endringslogg — event-basert cache-invalidering</td></tr>
+        <tr><td><code>/organisasjonsformer</code></td><td>AS → "Aksjeselskap" — kodebok</td></tr>
+    </table>
+
+    <h3>Andre registre (system-of-systems)</h3>
+    <table>
+        <tr><th>Registret</th><th>Auth</th><th>Use case</th></tr>
+        <tr><td>Foretaksregisteret</td><td>Åpent</td><td>Verifisere AS/ASA-status</td></tr>
+        <tr><td>Reelle rettighetshavere</td><td>Maskinporten</td><td>AML / KYC eierskapsoppslag</td></tr>
+        <tr><td>Regnskapsregisteret</td><td>Maskinporten</td><td>Hent siste årsregnskap on-demand</td></tr>
+        <tr><td>Løsøreregisteret</td><td>Åpent</td><td>Heftelser i bil / utstyr</td></tr>
+        <tr><td>Ektepaktregisteret</td><td>Person-scoped</td><td>Sjelden, men finnes</td></tr>
+    </table>
+
+    <p class="small muted" style="margin-top: 1em;">Hver utvidelse = <span class="accent">ny adapter i Infrastructure</span>, ingen endring i Application eller UI. <span class="accent">Søsterprosjektet</span> er det naturlige hjemmet for multi-registry — denne MVP-en holder seg til oppgavens scope.</p>
+</section>
+
+<section>
     <h2>Spørsmål?</h2>
     <h3>Forventede spørsmål</h3>
     <div class="two-col">
