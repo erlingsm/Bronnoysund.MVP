@@ -250,6 +250,36 @@ app.MapGet("/companies/{orgnr}", async (
 </section>
 
 <section>
+    <h2>Hvorfor ikke OpenAPI + Kiota?</h2>
+    <p class="muted">Vurdert og bevisst forkastet — for <em>denne</em> skalaen.</p>
+
+    <h3>Brreg har spec'en</h3>
+    <ul>
+        <li>OpenAPI: <code>data.brreg.no/81088a24-...</code></li>
+        <li>Kiota (Microsoft) eller NSwag kan generere strongly-typed klient + alle DTOs fra spec-URLen</li>
+    </ul>
+
+    <h3>Asymmetrien: ~50 endepunkter i spec'en, 2 brukes</h3>
+
+    <table style="margin-top: 1em;">
+        <tr><th>Tilnærming</th><th>Linjer i repo</th><th>Bare det vi bruker?</th></tr>
+        <tr><td>Kiota default</td><td>~8000</td><td>❌ Hele Brreg-API'et</td></tr>
+        <tr><td>NSwag default</td><td>~3000</td><td>❌ Hele Brreg-API'et</td></tr>
+        <tr><td>Refit (interface)</td><td>~20</td><td>✓ Bare det vi skriver</td></tr>
+        <tr><td><span class="accent">Håndrullet (valgt)</span></td><td>~150</td><td>✓ Bare det vi bruker</td></tr>
+    </table>
+
+    <h3>Hvor codegen koster mer enn det smaker — her</h3>
+    <ul>
+        <li>4000-linjers diff hver gang spec'en regenereres → code review-fatigue</li>
+        <li>IDE-søk treffer 47 endepunkter vi aldri kaller</li>
+        <li>Schema-drift fanges av WireMock-testene uansett (deterministisk, ikke avhengig av regenerering)</li>
+    </ul>
+
+    <p class="small muted">"Når ville du byttet?" Når surface vokser forbi ~20 endepunkter, eller når et annet team blir avhengig av Brreg-DTOs. For søsterprosjektet (multi-registry) ville jeg gått Kiota.</p>
+</section>
+
+<section>
     <h2>Validering — selvvaliderende value object</h2>
     <p class="muted">Validering skjer én gang, på grensen. Etter <code>TryCreate</code> er instansen alltid gyldig.</p>
     <pre><code class="language-csharp" data-trim>

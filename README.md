@@ -339,11 +339,42 @@ a reverse proxy (Blazor SignalR needs WebSocket upgrade headers), or local
 
 ## Credits
 
-Inspired by:
+### Primary sources
+
+Brønnøysundregistrene maintains the authoritative resources this MVP integrates with:
+
+- **GitHub org**: <https://github.com/orgs/brreg/repositories> — Brreg's own open-source clients and tooling
+- **API documentation**: <https://data.brreg.no/enhetsregisteret/api/dokumentasjon/no/index.html>
+- **OpenAPI specification**: <https://data.brreg.no/81088a24-8b8d-4b8f-b7be-0b03932bcb91>
+
+The OpenAPI spec is the contract we wrote our `BrregHttpClient` and DTOs against. See the [API integration choices](#api-integration-choices) section for why we hand-rolled the client instead of generating from the spec.
+
+### Secondary inspirations
+
+Third-party C# libraries reviewed for patterns (no code copied — own implementation per the assignment):
 
 - [Frank.Libraries.Brreg](https://github.com/frankhenrichdamgaard/Frank.Libraries) — Brreg lookup patterns
 - [organisationsnummer/csharp](https://github.com/organisationsnummer/csharp) — MOD11 reference
 - [SindreMA](https://github.com/SindreMA) — Brreg endpoint exploration
+
+## API integration choices
+
+### Why hand-rolled `BrregHttpClient` and not Kiota / NSwag from the OpenAPI spec?
+
+A deliberate trade-off given the scope of this MVP.
+
+| Approach | Lines committed to repo | Covers only what we use |
+| --- | --- | --- |
+| [Kiota](https://learn.microsoft.com/openapi/kiota/overview) (default) | ~8 000 | ❌ Whole Brreg API (~50 endpoints, ~200 DTOs) |
+| [NSwag](https://github.com/RicoSuter/NSwag) (default) | ~3 000 | ❌ Whole Brreg API |
+| [Refit](https://github.com/reactiveui/refit) (interface) | ~20 | ✓ Only what we declare |
+| **Hand-rolled (chosen)** | ~150 | ✓ Only what we use |
+
+We use **2 endpoints** out of ~50 in Brreg's spec. Code generation would put 4 000+ lines of auto-generated code in the repo for surfaces we never call — every regeneration would be a 4 000-line diff in code review, IDE search would hit `Generated/` files for unrelated endpoints, and a new reader would have to learn which folder bugs do _not_ live in.
+
+Schema drift is caught by the WireMock-stubbed integration tests (`Status404_ReturnsNull`, `Status410Gone_ReturnsNull`, mapping tests) deterministically — we don't need a regenerator to notice when Brreg changes a field.
+
+**When we'd switch**: when the surface grows past ~20 endpoints, or when another team consumes Brreg DTOs as a public contract. For the sister project ([Bronnoysund.Lookup](https://github.com/erlingsm/Bronnoysund.Lookup)) — a multi-registry aggregator that also pulls from Skatteetaten, SSB and others — Kiota would be the right call from day one.
 
 ## License
 
