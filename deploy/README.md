@@ -78,7 +78,21 @@ az containerapp create \
 WEBAPI_SCOPE="/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.App/containerApps/bronnoysund-webapi"
 az role assignment create --role "Contributor" --scope "$WEBAPI_SCOPE" --assignee "$APP_ID"
 
-# 3. Verify both RBAC entries are now there
+# 3. Give the Container App permission to pull from our private ACR.
+# (Skipped during 'create' because the placeholder image was public — Azure didn't
+# wire ACR auth automatically. Without this step the first push from our ACR fails
+# with UNAUTHORIZED.)
+az containerapp identity assign \
+    --name bronnoysund-webapi --resource-group "$RG" --system-assigned
+PRINCIPAL_ID=$(az containerapp identity show \
+    --name bronnoysund-webapi --resource-group "$RG" --query principalId -o tsv)
+ACR_SCOPE="/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.ContainerRegistry/registries/bronnoysundmvp04726"
+az role assignment create --role "AcrPull" --scope "$ACR_SCOPE" --assignee "$PRINCIPAL_ID"
+az containerapp registry set \
+    --name bronnoysund-webapi --resource-group "$RG" \
+    --server bronnoysundmvp04726.azurecr.io --identity system
+
+# 4. Verify both RBAC entries are now there
 az role assignment list --assignee "$APP_ID" --all -o table
 # Expect to see: Contributor on bronnoysund-webapi (and Contributor on bronnoysund-mvp, AcrPush + Contributor on bronnoysundmvp04726)
 ```
