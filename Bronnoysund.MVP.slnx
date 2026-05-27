@@ -19,9 +19,6 @@
     <File Path="deploy/deploy.sh" />
     <File Path="deploy/teardown.sh" />
   </Folder>
-  <Folder Name="/docs/presentation/">
-    <File Path="docs/presentation/index.html" />
-  </Folder>
   <Folder Name="/.github/workflows/">
     <File Path=".github/workflows/build-and-deploy.yml" />
   </Folder>
