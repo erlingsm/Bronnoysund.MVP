@@ -1,12 +1,48 @@
 @page "/"
 @page "/lookup"
 @using System.Globalization
+@using System.Text.Encodings.Web
+@using System.Text.Json
+@using System.Text.Json.Serialization
 @inject CompanyLookupViewModel ViewModel
 @inject IStringLocalizer<SharedResources> L
 @inject NavigationManager Nav
 @implements IDisposable
 
 <PageTitle>@L["LookupTitle"]</PageTitle>
+
+<style>
+    .flip-container { perspective: 1500px; }
+    .flipper {
+        display: grid;
+        transition: transform 0.6s ease;
+        transform-style: preserve-3d;
+        position: relative;
+    }
+    .flipper.flipped { transform: rotateY(180deg); }
+    .flip-face {
+        grid-area: 1 / 1;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+    }
+    .flip-back { transform: rotateY(180deg); }
+    .flip-toggle-btn {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        z-index: 1;
+    }
+    .json-display {
+        font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        margin: 0;
+        padding: 0;
+        white-space: pre;
+        overflow-x: auto;
+        color: #333;
+    }
+</style>
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
     <MudText Typo="Typo.h4" GutterBottom="true">@L["LookupTitle"]</MudText>
@@ -75,79 +111,85 @@
        visible without scrolling. The search list remains below as a breadcrumb to other hits. *@
     @if (ViewModel.Found is { } found)
     {
-        <MudPaper Class="pa-4 mb-3" Elevation="3">
+    <div class="flip-container mb-3">
+    <div class="flipper @(_showJson ? "flipped" : "")">
+    <div class="flip-face flip-front">
+        <MudPaper Class="pa-4" Elevation="3" Style="position: relative;">
             <MudText Typo="Typo.h5" Class="mb-1">@found.OrganizationName</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
                 <code>@found.OrganizationNumber</code> · @found.CompanyType · @found.LanguageForm
             </MudText>
 
-            @if (HasContact(found))
+            @if (found.Details is { } details)
             {
-                <MudText Typo="Typo.subtitle1" Class="mt-2 mb-1">@L["ContactSection"]</MudText>
-                <MudList T="string" Dense="true">
-                    @if (found.BusinessAddress is { } addr && FormatAddress(addr) is { } addrLine)
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.LocationOn" Text="@($"{L["AddressLabel"]}: {addrLine}")" />
-                    }
-                    @if (!string.IsNullOrWhiteSpace(found.Website))
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Public" Text="@($"{L["WebsiteLabel"]}: {found.Website}")" />
-                    }
-                    @if (!string.IsNullOrWhiteSpace(found.Email))
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Email" Text="@($"{L["EmailLabel"]}: {found.Email}")" />
-                    }
-                    @if (!string.IsNullOrWhiteSpace(found.Phone))
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Phone" Text="@($"{L["PhoneLabel"]}: {found.Phone}")" />
-                    }
-                    @if (!string.IsNullOrWhiteSpace(found.MobilePhone))
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.PhoneIphone" Text="@($"{L["MobileLabel"]}: {found.MobilePhone}")" />
-                    }
-                </MudList>
-            }
+                @if (HasContact(details))
+                {
+                    <MudText Typo="Typo.subtitle1" Class="mt-2 mb-1">@L["ContactSection"]</MudText>
+                    <MudList T="string" Dense="true">
+                        @if (details.BusinessAddress is { } addr && FormatAddress(addr) is { } addrLine)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.LocationOn" Text="@($"{L["AddressLabel"]}: {addrLine}")" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(details.Website))
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Public" Text="@($"{L["WebsiteLabel"]}: {details.Website}")" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(details.Email))
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Email" Text="@($"{L["EmailLabel"]}: {details.Email}")" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(details.Phone))
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Phone" Text="@($"{L["PhoneLabel"]}: {details.Phone}")" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(details.MobilePhone))
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.PhoneIphone" Text="@($"{L["MobileLabel"]}: {details.MobilePhone}")" />
+                        }
+                    </MudList>
+                }
 
-            @if (HasActivity(found))
-            {
-                <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">@L["ActivitySection"]</MudText>
-                <MudList T="string" Dense="true">
-                    @if (found.PrimaryIndustry is { } industry)
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Category" Text="@($"{L["IndustryLabel"]}: {industry.Code} — {industry.Description}")" />
-                    }
-                    @if (found.EmployeeCount is { } emp)
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.People" Text="@($"{L["EmployeesLabel"]}: {emp}")" />
-                    }
-                    @if (!string.IsNullOrWhiteSpace(found.SectorDescription))
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.AccountBalance" Text="@($"{L["SectorLabel"]}: {found.SectorDescription}")" />
-                    }
-                </MudList>
-            }
+                @if (HasActivity(details))
+                {
+                    <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">@L["ActivitySection"]</MudText>
+                    <MudList T="string" Dense="true">
+                        @if (details.PrimaryIndustry is { } industry)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Category" Text="@($"{L["IndustryLabel"]}: {industry.Code} — {industry.Description}")" />
+                        }
+                        @if (details.EmployeeCount is { } emp)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.People" Text="@($"{L["EmployeesLabel"]}: {emp}")" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(details.SectorDescription))
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.AccountBalance" Text="@($"{L["SectorLabel"]}: {details.SectorDescription}")" />
+                        }
+                    </MudList>
+                }
 
-            @if (HasDates(found))
-            {
-                <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">@L["DatesSection"]</MudText>
-                <MudList T="string" Dense="true">
-                    @if (found.FoundingDate is { } founded)
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Cake" Text="@($"{L["FoundingDateLabel"]}: {founded.ToString("d", CultureInfo.CurrentUICulture)}")" />
-                    }
-                    @if (found.RegisteredDate is { } reg)
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.HowToReg" Text="@($"{L["RegisteredDateLabel"]}: {reg.ToString("d", CultureInfo.CurrentUICulture)}")" />
-                    }
-                    @if (found.RegisteredInVatRegistry is { } vat)
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Receipt" Text="@($"{L["VatRegistryLabel"]}: {(vat ? L["YesValue"] : L["NoValue"])}")" />
-                    }
-                    @if (found.RegisteredInBusinessRegistry is { } biz)
-                    {
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Business" Text="@($"{L["BusinessRegistryLabel"]}: {(biz ? L["YesValue"] : L["NoValue"])}")" />
-                    }
-                </MudList>
+                @if (HasDates(details))
+                {
+                    <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">@L["DatesSection"]</MudText>
+                    <MudList T="string" Dense="true">
+                        @if (details.FoundingDate is { } founded)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Cake" Text="@($"{L["FoundingDateLabel"]}: {founded.ToString("d", CultureInfo.CurrentUICulture)}")" />
+                        }
+                        @if (details.RegisteredDate is { } reg)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.HowToReg" Text="@($"{L["RegisteredDateLabel"]}: {reg.ToString("d", CultureInfo.CurrentUICulture)}")" />
+                        }
+                        @if (details.RegisteredInVatRegistry is { } vat)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Receipt" Text="@($"{L["VatRegistryLabel"]}: {(vat ? L["YesValue"] : L["NoValue"])}")" />
+                        }
+                        @if (details.RegisteredInBusinessRegistry is { } biz)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Business" Text="@($"{L["BusinessRegistryLabel"]}: {(biz ? L["YesValue"] : L["NoValue"])}")" />
+                        }
+                    </MudList>
+                }
             }
 
             @if (ViewModel.StatusMessage is not null)
@@ -156,7 +198,26 @@
                     @ViewModel.StatusMessage
                 </MudText>
             }
+
+            <div class="flip-toggle-btn">
+                <MudIconButton Icon="@Icons.Material.Filled.Code" Size="Size.Small"
+                               Color="Color.Default" OnClick="ToggleJsonView"
+                               aria-label="@L["ShowJsonAriaLabel"]" />
+            </div>
         </MudPaper>
+    </div>
+    <div class="flip-face flip-back">
+        <MudPaper Class="pa-4" Elevation="3" Style="position: relative;">
+            <pre class="json-display">@FormatJson(found)</pre>
+            <div class="flip-toggle-btn">
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
+                               Color="Color.Default" OnClick="ToggleJsonView"
+                               aria-label="@L["ShowDetailsAriaLabel"]" />
+            </div>
+        </MudPaper>
+    </div>
+    </div>
+    </div>
     }
 
     @if (ViewModel.SearchHits.Count > 0)
@@ -284,23 +345,40 @@
     private async Task OnPageSizeChanged(int newPageSize)
         => await ViewModel.ChangePageSizeAsync(newPageSize, _cts.Token);
 
-    private static bool HasContact(CompanyResponse c) =>
-        c.BusinessAddress is not null
-        || !string.IsNullOrWhiteSpace(c.Website)
-        || !string.IsNullOrWhiteSpace(c.Email)
-        || !string.IsNullOrWhiteSpace(c.Phone)
-        || !string.IsNullOrWhiteSpace(c.MobilePhone);
+    // ---- JSON flip-view ----------------------------------------------------------------
 
-    private static bool HasActivity(CompanyResponse c) =>
-        c.PrimaryIndustry is not null
-        || c.EmployeeCount is not null
-        || !string.IsNullOrWhiteSpace(c.SectorDescription);
+    private bool _showJson;
 
-    private static bool HasDates(CompanyResponse c) =>
-        c.FoundingDate is not null
-        || c.RegisteredDate is not null
-        || c.RegisteredInVatRegistry is not null
-        || c.RegisteredInBusinessRegistry is not null;
+    private void ToggleJsonView() => _showJson = !_showJson;
+
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
+    private static string FormatJson(CompanyResponse response)
+        => JsonSerializer.Serialize(response, JsonOpts);
+
+    private static bool HasContact(CompanyDetails d) =>
+        d.BusinessAddress is not null
+        || !string.IsNullOrWhiteSpace(d.Website)
+        || !string.IsNullOrWhiteSpace(d.Email)
+        || !string.IsNullOrWhiteSpace(d.Phone)
+        || !string.IsNullOrWhiteSpace(d.MobilePhone);
+
+    private static bool HasActivity(CompanyDetails d) =>
+        d.PrimaryIndustry is not null
+        || d.EmployeeCount is not null
+        || !string.IsNullOrWhiteSpace(d.SectorDescription);
+
+    private static bool HasDates(CompanyDetails d) =>
+        d.FoundingDate is not null
+        || d.RegisteredDate is not null
+        || d.RegisteredInVatRegistry is not null
+        || d.RegisteredInBusinessRegistry is not null;
 
     private static string? FormatAddress(PostalAddress a)
     {

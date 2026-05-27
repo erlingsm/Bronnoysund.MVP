@@ -94,35 +94,38 @@ public class BrregCompanyProviderMappingTests : IDisposable
         company.OrganizationName.Should().Be("RIKSREVISJONEN");
         company.CompanyType.Should().Be("ORGL");
         company.LanguageForm.Should().Be("Bokmål");
-        company.Website.Should().Be("www.riksrevisjonen.no/");
-        company.Email.Should().Be("postmottak@riksrevisjonen.no");
-        company.Phone.Should().Be("22 24 10 00");
-        company.MobilePhone.Should().Be("99 99 99 99");
 
-        company.BusinessAddress.Should().NotBeNull();
-        company.BusinessAddress!.StreetAddress.Should().Be("Storgata 16");
-        company.BusinessAddress.PostalCode.Should().Be("0184");
-        company.BusinessAddress.City.Should().Be("OSLO");
-        company.BusinessAddress.Municipality.Should().Be("OSLO");
-        company.BusinessAddress.Country.Should().Be("Norge");
+        company.Details.Should().NotBeNull();
+        var details = company.Details!;
+        details.Website.Should().Be("www.riksrevisjonen.no/");
+        details.Email.Should().Be("postmottak@riksrevisjonen.no");
+        details.Phone.Should().Be("22 24 10 00");
+        details.MobilePhone.Should().Be("99 99 99 99");
 
-        company.PostalAddress.Should().NotBeNull();
-        company.PostalAddress!.StreetAddress.Should().Be("Postboks 6835 St. Olavs plass"); // joined with space
+        details.BusinessAddress.Should().NotBeNull();
+        details.BusinessAddress!.StreetAddress.Should().Be("Storgata 16");
+        details.BusinessAddress.PostalCode.Should().Be("0184");
+        details.BusinessAddress.City.Should().Be("OSLO");
+        details.BusinessAddress.Municipality.Should().Be("OSLO");
+        details.BusinessAddress.Country.Should().Be("Norge");
 
-        company.PrimaryIndustry.Should().NotBeNull();
-        company.PrimaryIndustry!.Code.Should().Be("84.110");
-        company.PrimaryIndustry.Description.Should().Be("Generell offentlig administrasjon");
+        details.PostalAddress.Should().NotBeNull();
+        details.PostalAddress!.StreetAddress.Should().Be("Postboks 6835 St. Olavs plass"); // joined with space
 
-        company.EmployeeCount.Should().Be(445);
-        company.SectorCode.Should().Be("6100");
-        company.SectorDescription.Should().Be("Statsforvaltningen");
-        company.FoundingDate.Should().Be(new DateOnly(1819, 4, 12));
-        company.RegisteredDate.Should().Be(new DateOnly(1995, 8, 9));
-        company.RegisteredInVatRegistry.Should().BeFalse();
-        company.RegisteredInBusinessRegistry.Should().BeFalse();
-        company.IsBankrupt.Should().BeFalse();
-        company.BankruptcyDate.Should().BeNull();
-        company.DeletedDate.Should().BeNull();
+        details.PrimaryIndustry.Should().NotBeNull();
+        details.PrimaryIndustry!.Code.Should().Be("84.110");
+        details.PrimaryIndustry.Description.Should().Be("Generell offentlig administrasjon");
+
+        details.EmployeeCount.Should().Be(445);
+        details.SectorCode.Should().Be("6100");
+        details.SectorDescription.Should().Be("Statsforvaltningen");
+        details.FoundingDate.Should().Be(new DateOnly(1819, 4, 12));
+        details.RegisteredDate.Should().Be(new DateOnly(1995, 8, 9));
+        details.RegisteredInVatRegistry.Should().BeFalse();
+        details.RegisteredInBusinessRegistry.Should().BeFalse();
+        details.IsBankrupt.Should().BeFalse();
+        details.BankruptcyDate.Should().BeNull();
+        details.DeletedDate.Should().BeNull();
     }
 
     [TestMethod]
@@ -145,12 +148,14 @@ public class BrregCompanyProviderMappingTests : IDisposable
         var result = await _sut.LookupAsync(OrganizationNumber.Create("919300388"), CancellationToken.None);
 
         var company = result.Should().BeOfType<CompanyLookupResult.Found>().Subject.Company;
-        company.Website.Should().BeNull();
-        company.BusinessAddress.Should().BeNull();
-        company.PostalAddress.Should().BeNull();
-        company.PrimaryIndustry.Should().BeNull();
-        company.EmployeeCount.Should().BeNull();
-        company.IsBankrupt.Should().BeFalse();
+        company.Details.Should().NotBeNull();
+        var details = company.Details!;
+        details.Website.Should().BeNull();
+        details.BusinessAddress.Should().BeNull();
+        details.PostalAddress.Should().BeNull();
+        details.PrimaryIndustry.Should().BeNull();
+        details.EmployeeCount.Should().BeNull();
+        details.IsBankrupt.Should().BeFalse();
     }
 
     [TestMethod]
@@ -199,6 +204,6 @@ public class BrregCompanyProviderMappingTests : IDisposable
 
         var result = await _sut.LookupAsync(OrganizationNumber.Create("919300388"), CancellationToken.None);
 
-        result.Should().BeOfType<CompanyLookupResult.Found>().Which.Company.EmployeeCount.Should().BeNull();
+        result.Should().BeOfType<CompanyLookupResult.Found>().Which.Company.Details!.EmployeeCount.Should().BeNull();
     }
 }

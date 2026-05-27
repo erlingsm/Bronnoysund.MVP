@@ -4,15 +4,25 @@ namespace Bronnoysund.Application.Dtos;
 
 /// <summary>
 /// English-field response for organization-number lookups, per the original task requirements.
-/// The first four fields cover the MVP contract; subsequent optional fields are populated from
-/// the open Brreg entity payload when available, and stay null for entities that lack them.
-/// All additions have null defaults so the original API contract is preserved.
+/// The four top-level fields cover the MVP contract exactly as specified; richer information from
+/// the open Brreg entity payload (contact info, address, industry, lifecycle dates) is exposed
+/// under <see cref="Details"/> so the contract stays tight while UI consumers still get the bonus
+/// fields without an extra call.
 /// </summary>
 public sealed record CompanyResponse(
     string OrganizationNumber,
     string OrganizationName,
     string CompanyType,
     string LanguageForm,
+    CompanyDetails? Details = null
+);
+
+/// <summary>
+/// Optional secondary fields populated from the Brreg entity payload when available.
+/// Null defaults so a registry response without these fields still serializes to a sensible
+/// CompanyDetails (or to a missing Details on CompanyResponse altogether).
+/// </summary>
+public sealed record CompanyDetails(
     string? Website = null,
     string? Email = null,
     string? Phone = null,

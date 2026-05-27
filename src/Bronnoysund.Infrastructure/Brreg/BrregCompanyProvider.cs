@@ -51,6 +51,9 @@ internal sealed class BrregCompanyProvider(
         OrganizationName: domain.Name,
         CompanyType: domain.OrganizationFormCode,
         LanguageForm: domain.LanguageForm.ToString(),
+        Details: BuildDetails(dto));
+
+    private static CompanyDetails BuildDetails(BrregEnhetDto dto) => new(
         Website: NullIfEmpty(dto.Hjemmeside),
         Email: NullIfEmpty(dto.Epostadresse),
         Phone: NullIfEmpty(dto.Telefon),
