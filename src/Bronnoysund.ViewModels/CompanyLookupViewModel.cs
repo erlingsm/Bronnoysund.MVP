@@ -211,4 +211,29 @@ public sealed partial class CompanyLookupViewModel(
         OrgNumberInput = hit.OrganizationNumber;
         await LookupCoreAsync(ct);
     }
+
+    /// <summary>
+    /// Wipe all transient form state — input fields, error/status messages, search results,
+    /// pagination, drilled-down detail. Triggered by clicking the app title in the header.
+    /// The HybridCache layer in Infrastructure is untouched, so the next search/lookup for
+    /// the same orgnr or query is served from cache.
+    /// </summary>
+    public void Reset()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+        OrgNumberInput = string.Empty;
+        NameQueryInput = string.Empty;
+        IsNameSearchMode = false;
+        Found = null;
+        ErrorMessage = null;
+        StatusMessage = null;
+        SearchHits = [];
+        SearchTotalElements = 0;
+        CurrentPage = 0;
+        PageSize = SearchCompaniesByNameHandler.DefaultPageSize;
+        TotalPages = 0;
+    }
 }

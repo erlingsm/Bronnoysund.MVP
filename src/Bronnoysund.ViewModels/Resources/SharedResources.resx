@@ -129,6 +129,9 @@
   <!-- Language switcher -->
   <data name="UiCultureLabel"><value>Language</value></data>
   <data name="MenuAriaLabel"><value>Menu</value></data>
+  <data name="TitleResetAriaLabel"><value>Reset form</value></data>
+  <data name="ShowJsonAriaLabel"><value>Show JSON</value></data>
+  <data name="ShowDetailsAriaLabel"><value>Show details</value></data>
   <data name="LanguageEnglish"><value>English</value></data>
   <data name="LanguageNorwegianBokmal"><value>Norsk</value></data>
   <data name="LanguageNorwegianNynorsk"><value>Nynorsk</value></data>

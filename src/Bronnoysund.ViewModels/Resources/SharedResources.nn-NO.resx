@@ -123,6 +123,9 @@
 
   <data name="UiCultureLabel"><value>Språk</value></data>
   <data name="MenuAriaLabel"><value>Meny</value></data>
+  <data name="TitleResetAriaLabel"><value>Nullstill skjema</value></data>
+  <data name="ShowJsonAriaLabel"><value>Vis JSON</value></data>
+  <data name="ShowDetailsAriaLabel"><value>Vis detaljar</value></data>
   <data name="LanguageEnglish"><value>English</value></data>
   <data name="LanguageNorwegianBokmal"><value>Norsk</value></data>
   <data name="LanguageNorwegianNynorsk"><value>Nynorsk</value></data>

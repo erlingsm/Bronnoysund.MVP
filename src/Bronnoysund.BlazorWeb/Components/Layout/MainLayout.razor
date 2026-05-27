@@ -1,13 +1,19 @@
 @inherits LayoutComponentBase
 @using System.Globalization
 @using Microsoft.Extensions.Localization
+@using Bronnoysund.ViewModels
 @using Bronnoysund.ViewModels.Resources
 @inject NavigationManager Nav
 @inject IStringLocalizer<SharedResources> L
+@inject CompanyLookupViewModel ViewModel
 
 <MudLayout>
     <MudAppBar Elevation="1" Color="Color.Primary">
-        <MudText Typo="Typo.h6">@L["AppTitle"]</MudText>
+        <MudButton Variant="Variant.Text" Color="Color.Inherit" OnClick="OnTitleClick"
+                   Class="text-h6 text-transform-none pa-2"
+                   aria-label="@L["TitleResetAriaLabel"]">
+            @L["AppTitle"]
+        </MudButton>
         <MudSpacer />
         <MudMenu Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Dense="true"
                  AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight"
@@ -57,5 +63,19 @@
         var redirectUri = new Uri(Nav.Uri).PathAndQuery;
         var target = $"/set-culture?culture={Uri.EscapeDataString(culture)}&redirectUri={Uri.EscapeDataString(redirectUri)}";
         Nav.NavigateTo(target, forceLoad: true);
+    }
+
+    /// <summary>
+    /// Reset the form state via the shared view-model (Scoped DI). The HybridCache in
+    /// Infrastructure is untouched, so a follow-up search/lookup is still served from cache.
+    /// Also navigates to '/' so the browser URL drops any orgnr / name query strings.
+    /// </summary>
+    private void OnTitleClick()
+    {
+        ViewModel.Reset();
+        if (!Nav.Uri.EndsWith("/", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/");
+        }
     }
 }
