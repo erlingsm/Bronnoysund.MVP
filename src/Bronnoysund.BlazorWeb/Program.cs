@@ -3,6 +3,7 @@
 using Bronnoysund.Application;
 using Bronnoysund.Application.Results;
 using Bronnoysund.Application.UseCases.LookupCompany;
+using Bronnoysund.Application.UseCases.LookupCompanyRoles;
 using Bronnoysund.BlazorWeb.Components;
 using Bronnoysund.Infrastructure;
 using Bronnoysund.ViewModels;
@@ -122,6 +123,34 @@ try
                 message = inv.Message
             }),
             CompanyLookupResult.Unavailable unav => Results.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Brønnøysundregistrene (the Brønnøysund Register Centre) is temporarily unavailable",
+                detail: unav.Message),
+            _ => Results.Problem("Unexpected result type.")
+        };
+    });
+
+    // Roles for an entity, mirroring the WebApi project's /companies/{orgnr}/roles endpoint.
+    app.MapGet("/api/companies/{orgnr}/roles", async (
+        string orgnr,
+        LookupCompanyRolesHandler handler,
+        CancellationToken ct) =>
+    {
+        var result = await handler.HandleAsync(new LookupCompanyRolesQuery(orgnr), ct);
+        return result switch
+        {
+            CompanyRolesResult.Found f => Results.Ok(f.Roles),
+            CompanyRolesResult.NotFound nf => Results.NotFound(new
+            {
+                error = "not_found",
+                message = $"No roles found for organization number {nf.OrganizationNumber}."
+            }),
+            CompanyRolesResult.InvalidInput inv => Results.BadRequest(new
+            {
+                error = "invalid_input",
+                message = inv.Message
+            }),
+            CompanyRolesResult.Unavailable unav => Results.Problem(
                 statusCode: StatusCodes.Status503ServiceUnavailable,
                 title: "Brønnøysundregistrene (the Brønnøysund Register Centre) is temporarily unavailable",
                 detail: unav.Message),

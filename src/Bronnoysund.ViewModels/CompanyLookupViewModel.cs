@@ -4,6 +4,7 @@ using Bronnoysund.Application.Dtos;
 using Bronnoysund.Application.Ports;
 using Bronnoysund.Application.Results;
 using Bronnoysund.Application.UseCases.LookupCompany;
+using Bronnoysund.Application.UseCases.LookupCompanyRoles;
 using Bronnoysund.Application.UseCases.SearchCompaniesByName;
 using Bronnoysund.ViewModels.Resources;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -14,6 +15,7 @@ namespace Bronnoysund.ViewModels;
 
 public sealed partial class CompanyLookupViewModel(
     LookupCompanyHandler lookupHandler,
+    LookupCompanyRolesHandler rolesHandler,
     SearchCompaniesByNameHandler searchHandler,
     IStringLocalizer<SharedResources> localizer) : ObservableObject
 {
@@ -31,6 +33,13 @@ public sealed partial class CompanyLookupViewModel(
 
     [ObservableProperty]
     public partial CompanyResponse? Found { get; set; }
+
+    /// <summary>
+    /// Roles (board, CEO, auditor, …) for the looked-up entity. Loaded as a follow-up to a
+    /// successful lookup and null when absent, still loading, or unavailable.
+    /// </summary>
+    [ObservableProperty]
+    public partial CompanyRolesResponse? Roles { get; set; }
 
     [ObservableProperty]
     public partial string? ErrorMessage { get; set; }
@@ -89,6 +98,7 @@ public sealed partial class CompanyLookupViewModel(
         ErrorMessage = null;
         StatusMessage = null;
         Found = null;
+        Roles = null;
 
         try
         {
@@ -98,6 +108,9 @@ public sealed partial class CompanyLookupViewModel(
                 case CompanyLookupResult.Found f:
                     Found = f.Company;
                     StatusMessage = localizer["FoundInRegistry"];
+                    // Enrich the card with roles. A failure here must not turn a successful
+                    // company lookup into an error — the section simply stays hidden.
+                    await LoadRolesAsync(f.Company.OrganizationNumber, ct);
                     break;
                 case CompanyLookupResult.NotFound nf:
                     ErrorMessage = localizer["NotFoundForOrgNumber", nf.OrganizationNumber];
@@ -114,6 +127,19 @@ public sealed partial class CompanyLookupViewModel(
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Fetch the roles for the looked-up entity. Roles are a secondary registry resource, so an
+    /// outage or absence is swallowed (the section just does not render) rather than surfaced as
+    /// a lookup error. The orgnr is already validated at this point — it came from a Found result.
+    /// </summary>
+    private async Task LoadRolesAsync(string orgNumber, CancellationToken ct)
+    {
+        var result = await rolesHandler.HandleAsync(new LookupCompanyRolesQuery(orgNumber), ct);
+        Roles = result is CompanyRolesResult.Found f && f.Roles.Groups.Count > 0
+            ? f.Roles
+            : null;
     }
 
     /// <summary>New name search — always starts at page 0 and clears any previous result.</summary>
@@ -165,6 +191,7 @@ public sealed partial class CompanyLookupViewModel(
         ErrorMessage = null;
         StatusMessage = null;
         Found = null;
+        Roles = null;
         SearchHits = [];
 
         try
@@ -228,6 +255,7 @@ public sealed partial class CompanyLookupViewModel(
         NameQueryInput = string.Empty;
         IsNameSearchMode = false;
         Found = null;
+        Roles = null;
         ErrorMessage = null;
         StatusMessage = null;
         SearchHits = [];

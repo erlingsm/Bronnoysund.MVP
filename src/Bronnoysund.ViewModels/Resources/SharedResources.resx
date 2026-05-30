@@ -78,6 +78,7 @@
   <data name="RolesPerson"><value>Person</value></data>
   <data name="RolesRoleType"><value>Role</value></data>
   <data name="RolesBirthDate"><value>Born</value></data>
+  <data name="RolesElectedBy"><value>Elected by</value></data>
   <data name="NoRoles"><value>No active roles registered.</value></data>
   <data name="SubUnitsSection"><value>Sub-units</value></data>
   <data name="NoSubUnits"><value>No sub-units registered.</value></data>
