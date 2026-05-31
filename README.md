@@ -207,10 +207,10 @@ Curated test inputs that exercise each code path. Use these for the live demo or
 
 | Orgnr / Input | Outcome | HTTP |
 | --- | --- | --- |
-| `919300388` | Artisan Consulting AS — happy path | `200` |
+| `985079056` | Statoil SP Gas AS — happy path | `200` |
 | `974760843` | Riksrevisjonen — public-sector entity (Bokmål `maalform`) | `200` |
 | `971032081` | Statens vegvesen — `ORGL` organisation form | `200` |
-| `933722821` | Røa Systemutvikling AS — small AS | `200` |
+| `915839517` | Programmere AS — small AS | `200` |
 | `12345` | Too short → "must be exactly 9 digits" | `400` |
 | `abc123def` | Non-digit → "can only contain digits" | `400` |
 | `712345678` | Wrong prefix → "must start with 8 or 9" | `400` |

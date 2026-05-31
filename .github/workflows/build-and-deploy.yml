@@ -3,6 +3,12 @@ name: Build, test, and deploy
 on:
   push:
     branches: [master]
+    # Docs-only pushes don't change runtime behaviour, so skip the build/deploy pipeline for
+    # them. A commit touching any non-markdown file still runs in full (paths-ignore only skips
+    # when *every* changed file matches). Pull requests are intentionally NOT filtered, so the
+    # required "Build & test" status check always reports on a PR even when it edits only docs.
+    paths-ignore:
+      - '**.md'
   pull_request:
   workflow_dispatch:
 
