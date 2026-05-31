@@ -51,6 +51,7 @@ For a curated table of inputs that hit every code path, see [Demo inputs](#demo-
 
 - **.NET 10** (10.0.203 or later)
 - **ASP.NET Core Minimal API** for the REST endpoint host
+- **OpenAPI (built-in `Microsoft.AspNetCore.OpenApi`) + Swagger UI** — interactive docs at `/swagger`, machine-readable contract at `/openapi/v1.json`
 - **Blazor Server + MudBlazor** for the web UI
 - **CommunityToolkit.Mvvm** for the lookup view-model
 - **Polly v8** (`Microsoft.Extensions.Http.Resilience`) — retry / circuit breaker / timeout / rate limiter
@@ -100,8 +101,23 @@ Two hosts expose the same JSON API. Same handler, same caching, same response sh
 | `GET` | `/api/companies/{orgnr}/roles` | `/companies/{orgnr}/roles` | Roles (board, CEO, auditor …) grouped by role group |
 | `GET` | _(not exposed)_ | `/companies?name={q}&size={N}&page={P}` | Paginated name search |
 | `GET` | _(not exposed)_ | `/health` | Liveness probe |
+| `GET` | `/openapi/v1.json` | `/openapi/v1.json` | OpenAPI 3 document |
+| `GET` | `/swagger` | `/swagger` | Swagger UI (interactive docs) |
 
 The BlazorWeb host keeps its surface minimal — the UI uses its own internal handlers and exposes the orgnr lookup and its roles as JSON. The WebApi host is the full REST surface.
+
+### API docs (OpenAPI / Swagger)
+
+Both hosts publish their JSON surface as an OpenAPI 3 document via the .NET 10 built-in generator (`Microsoft.AspNetCore.OpenApi`), with Swagger UI on top:
+
+| Host | Swagger UI | OpenAPI document |
+| --- | --- | --- |
+| **BlazorWeb** | <https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io/swagger> | `/openapi/v1.json` |
+| **WebApi** | <https://bronnoysund-webapi.redpebble-469bb928.norwayeast.azurecontainerapps.io/swagger> | `/openapi/v1.json` |
+
+The schemas are generated from each endpoint's response-type metadata (`.Produces<CompanyResponse>()`, `CompanyRolesResponse`, `CompanySearchResult`), so what Swagger shows matches what the API returns; the internal `/set-culture` cookie endpoint is excluded from the document. The docs are served in every environment on purpose — this is a public demo whose JSON contract is the point.
+
+This MVP is a thin English-field facade over the upstream **Brønnøysund Enhetsregisteret API**, whose own reference documentation lives at <https://data.brreg.no/enhetsregisteret/api/dokumentasjon/no/index.html>.
 
 ### Response — `GET /companies/{orgnr}` (200 OK)
 
@@ -248,6 +264,7 @@ curl http://localhost:5000/health
 curl http://localhost:5000/companies/919300388
 curl http://localhost:5000/companies/923609016/roles
 curl "http://localhost:5000/companies?name=Statens+vegvesen&size=5"
+# Interactive API docs: open http://localhost:5000/swagger (or /openapi/v1.json for the raw doc)
 ```
 
 Both hosts hit Brønnøysund directly (no DB, no separate API tier — the Application + Infrastructure layers are shared between them).

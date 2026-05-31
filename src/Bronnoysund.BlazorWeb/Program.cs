@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 using Bronnoysund.Application;
+using Bronnoysund.Application.Dtos;
 using Bronnoysund.Application.Results;
 using Bronnoysund.Application.UseCases.LookupCompany;
 using Bronnoysund.Application.UseCases.LookupCompanyRoles;
@@ -46,6 +47,9 @@ try
     builder.Services.AddBronnoysundApplication();
     builder.Services.AddBronnoysundInfrastructure(builder.Configuration);
 
+    // OpenAPI for the JSON /api surface (lookup + roles); rendered by Swagger UI below.
+    builder.Services.AddOpenApi();
+
     // Scoped (per-circuit) so the title-click reset reaches the same VM instance the
     // Lookup page is bound to. Transient would give MainLayout a different VM than the page.
     builder.Services.AddScoped<CompanyLookupViewModel>();
@@ -68,6 +72,12 @@ try
     app.UseRequestLocalization();
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
     app.UseAntiforgery();
+
+    // OpenAPI document at /openapi/v1.json + Swagger UI at /swagger for the JSON /api surface.
+    app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+        options.SwaggerEndpoint("/openapi/v1.json", "Bronnoysund BlazorWeb API v1"));
+
     app.MapStaticAssets();
     app.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode()
@@ -97,7 +107,8 @@ try
                 Path = "/"
             });
         return Results.LocalRedirect(redirectUri);
-    });
+    })
+    .ExcludeFromDescription(); // internal UI plumbing, not part of the public JSON API
 
     // Single source of truth for the "Brreg is down" 503, shared by the JSON endpoints below.
     static IResult BrregUnavailable(string detail) => Results.Problem(
@@ -131,7 +142,14 @@ try
             CompanyLookupResult.Unavailable unav => BrregUnavailable(unav.Message),
             _ => Results.Problem("Unexpected result type.")
         };
-    });
+    })
+    .WithName("LookupCompany")
+    .WithSummary("Look up a company by organisation number")
+    .WithTags("Companies")
+    .Produces<CompanyResponse>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status404NotFound)
+    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
     // Roles for an entity, mirroring the WebApi project's /companies/{orgnr}/roles endpoint.
     app.MapGet("/api/companies/{orgnr}/roles", async (
@@ -158,7 +176,14 @@ try
             CompanyRolesResult.Unavailable unav => BrregUnavailable(unav.Message),
             _ => Results.Problem("Unexpected result type.")
         };
-    });
+    })
+    .WithName("LookupCompanyRoles")
+    .WithSummary("List the roles registered for a company (board, CEO, auditor …), grouped by role group")
+    .WithTags("Companies")
+    .Produces<CompanyRolesResponse>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status404NotFound)
+    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
     Log.Information("Bronnoysund.BlazorWeb starting on {Urls}", string.Join(", ", app.Urls));
     app.Run();

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 using Bronnoysund.Application;
+using Bronnoysund.Application.Dtos;
+using Bronnoysund.Application.Ports;
 using Bronnoysund.Application.Results;
 using Bronnoysund.Application.UseCases.LookupCompany;
 using Bronnoysund.Application.UseCases.LookupCompanyRoles;
@@ -28,11 +30,22 @@ try
     builder.Services.AddBronnoysundInfrastructure(builder.Configuration);
     builder.Services.AddProblemDetails();
 
+    // OpenAPI document generation (.NET 10 built-in). The endpoints below annotate their
+    // response shapes so the generated /openapi/v1.json is accurate; Swagger UI renders it.
+    builder.Services.AddOpenApi();
+
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
     app.UseExceptionHandler();
     app.UseStatusCodePages();
+
+    // Machine-readable contract at /openapi/v1.json, interactive Swagger UI at /swagger.
+    // Exposed in every environment on purpose — this is a public demo whose JSON contract is
+    // the point. Drop behind `if (app.Environment.IsDevelopment())` to hide it in production.
+    app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+        options.SwaggerEndpoint("/openapi/v1.json", "Bronnoysund WebApi v1"));
 
     // Single source of truth for the "Brreg is down" 503 — every endpoint funnels its
     // Unavailable branch through here so the title/shape can't drift between endpoints.
@@ -63,7 +76,14 @@ try
             CompanyLookupResult.Unavailable unav => BrregUnavailable(unav.Message),
             _ => Results.Problem("Unexpected result type.")
         };
-    });
+    })
+    .WithName("LookupCompany")
+    .WithSummary("Look up a company by organisation number")
+    .WithTags("Companies")
+    .Produces<CompanyResponse>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status404NotFound)
+    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
     app.MapGet("/companies/{orgnr}/roles", async (
         string orgnr,
@@ -90,7 +110,14 @@ try
             CompanyRolesResult.Unavailable unav => BrregUnavailable(unav.Message),
             _ => Results.Problem("Unexpected result type.")
         };
-    });
+    })
+    .WithName("LookupCompanyRoles")
+    .WithSummary("List the roles registered for a company (board, CEO, auditor …), grouped by role group")
+    .WithTags("Companies")
+    .Produces<CompanyRolesResponse>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status404NotFound)
+    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
     app.MapGet("/companies", async (
         string? name,
@@ -111,9 +138,18 @@ try
             SearchCompaniesByNameResult.Unavailable u => BrregUnavailable(u.Message),
             _ => Results.Problem("Unexpected result type."),
         };
-    });
+    })
+    .WithName("SearchCompaniesByName")
+    .WithSummary("Paginated free-text company name search")
+    .WithTags("Companies")
+    .Produces<CompanySearchResult>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
-    app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "Bronnoysund.WebApi" }));
+    app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "Bronnoysund.WebApi" }))
+        .WithName("Health")
+        .WithSummary("Liveness probe")
+        .WithTags("Ops");
 
     Log.Information("Bronnoysund.WebApi starting");
     app.Run();
