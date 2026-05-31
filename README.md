@@ -4,7 +4,7 @@
 
 ## Background
 
-A small home assignment: given a Norwegian organisation number, look it up in the Brønnøysund Enhetsregisteret and return a simplified English response. Plus three deliberate extensions agreed up-front — a Blazor Server web frontend with English / Bokmål / Nynorsk language switching, a paginated name search, and a JSON flip-view that lets the user see the API contract from inside the UI.
+A small project for self study: Given a Norwegian organisation number, look it up in the Brønnøysund Enhetsregisteret and return a simplified English response. Plus three deliberate extensions agreed up-front — a Blazor Server web frontend with English / Bokmål / Nynorsk language switching, a paginated name search, and a JSON flip-view that lets the user see the API contract from inside the UI.
 
 Sister project (the broader product family — MAUI Desktop, MAUI Mobile, multi-registry aggregator, persistence, watch apps): <https://github.com/erlingsm/Bronnoysund.Lookup>.
 
@@ -19,7 +19,7 @@ A guided click-through of the deployed UI. About three minutes.
 
 1. Open <https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io> in any modern browser. The page is a single input with a "Look up" button and a radio toggle for **Organization number** vs **Name**.
 
-2. **Org-number happy path** — enter `919300388` and press Enter. The detail card slides in with company name (Artisan Consulting AS), `AS` form code, `Bokmål` language form, plus a "Details" block with industry, employee count, founding date, and which Brreg sub-registries the entity is in. Below that, a **Roles** block lists who's registered in the company — kept in Brreg's own role groups (Daglig leder, Styre, Revisor …), each holder with their role and birth year, and "Elected by" where it applies (e.g. employee representatives). Try `923609016` (Equinor ASA) for a full board. Roles load as a follow-up call right after the core card, so the card never waits on them.
+2. **Org-number happy path** — enter `985079056` and press Enter. The detail card slides in with company name (Statoil SP Gas AS), `AS` form code, `Bokmål` language form, plus a "Details" block with industry, employee count, founding date, and which Brreg sub-registries the entity is in. Below that, a **Roles** block lists who's registered in the company — kept in Brreg's own role groups (Daglig leder, Styre, Revisor …), each holder with their role and birth year, and "Elected by" where it applies (e.g. employee representatives). Try `923609016` (Equinor ASA) for a full board. Roles load as a follow-up call right after the core card, so the card never waits on them.
 
 3. **JSON flip-view** — click the small `<>` icon in the bottom-right corner of the detail card. The card flips with a 0.6 s `rotateY` animation to show the same data as JSON, formatted line-by-line — the exact shape the API returns. Click the eye icon on the back of the card to flip it back.
 
@@ -56,7 +56,7 @@ For a curated table of inputs that hit every code path, see [Demo inputs](#demo-
 - **Polly v8** (`Microsoft.Extensions.Http.Resilience`) — retry / circuit breaker / timeout / rate limiter
 - **HybridCache** — in-process cache; 24 h TTL for orgnr lookups, 5 min for name-search pages
 - **Serilog** — structured logging (console + rolling file)
-- **MSTest + FluentAssertions + NSubstitute + WireMock.Net** — testing (81 tests, < 1 s total runtime)
+- **MSTest + FluentAssertions + NSubstitute + WireMock.Net** — testing (83 tests, < 1 s total runtime)
 
 ## Project layout
 
@@ -73,7 +73,7 @@ For a curated table of inputs that hit every code path, see [Demo inputs](#demo-
 ├── tests/
 │   ├── Bronnoysund.Domain.Tests/         24 tests — MOD11, normalisation, edge cases
 │   ├── Bronnoysund.Application.Tests/    21 tests — handler logic, pagination, cancellation
-│   ├── Bronnoysund.Infrastructure.Tests/ 28 tests — WireMock-stubbed HTTP + cache round-trips, roles mapping
+│   ├── Bronnoysund.Infrastructure.Tests/ 30 tests — WireMock-stubbed HTTP + cache round-trips/eviction, roles mapping
 │   └── Bronnoysund.ViewModels.Tests/      8 tests — localisation parity (en / nb-NO / nn-NO)
 ├── deploy/
 │   ├── deploy.sh                       Local manual deploy (build + test + acr build + update)
@@ -260,7 +260,7 @@ Both hosts hit Brønnøysund directly (no DB, no separate API tier — the Appli
 dotnet test
 ```
 
-81 tests across four projects, total runtime under one second. No real Brønnøysund call during CI — integration tests use WireMock.Net to stub the HTTP layer deterministically.
+83 tests across four projects, total runtime under one second. No real Brønnøysund call during CI — integration tests use WireMock.Net to stub the HTTP layer deterministically.
 
 ## Architecture
 
@@ -288,7 +288,7 @@ Domain ← Application ← Infrastructure
 
 **Validation in Domain.** `OrganizationNumber.TryCreate` enforces the 9-digit rule, the 8/9 prefix rule, and the MOD11 control digit before any HTTP call. The assignment only required the first two rules; MOD11 is a free quality win that prevents one wasted roundtrip per invalid input.
 
-**Caching as a decorator.** `CachingCompanyProvider` wraps the real `BrregCompanyProvider` and uses `HybridCache` (L1 in-process) with a 24 h default TTL. The decorator pattern keeps the caching concern out of the handler and trivially supports swapping for a distributed L2 (Redis) later — `HybridCache` supports both layers behind the same API. `CachingCompanySearchProvider` mirrors the pattern with a 5 min TTL keyed by `(query, page-size, page)`.
+**Caching as a decorator.** `CachingCompanyProvider` and `CachingRolesProvider` wrap the real Brreg providers and use `HybridCache` (L1 in-process) with a 24 h default TTL; `CachingCompanySearchProvider` mirrors the pattern with a 5 min TTL keyed by `(query, page-size, page)`. All three route through one `BrregCache.GetOrCreateUnionAsync` helper that also owns the negative-result policy: a transient `Unavailable` is evicted immediately rather than pinned for the full TTL, so a brief outage never hides a company (or its roles) for 24 h — the Polly circuit breaker guards the repeat traffic. The decorator pattern keeps caching out of the handlers and trivially supports a distributed L2 (Redis) later behind the same `HybridCache` API.
 
 **Resilience via Polly v8.** `AddStandardResilienceHandler()` on the typed `HttpClient` gives retry with jitter, per-attempt timeout, circuit breaker, and rate limiter — all Microsoft-recommended defaults. On unrecoverable failure `BrregUnavailableException` surfaces as HTTP 503 from the WebApi and a "Registry unavailable" alert in the Blazor UI.
 
