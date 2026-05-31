@@ -16,7 +16,9 @@ namespace Bronnoysund.Infrastructure.Caching;
 /// <see cref="BrregOptions.CacheTtl"/> (roles drift at roughly the same slow pace as the entity
 /// record). The <see cref="CompanyRolesResult"/> union is flattened into <see cref="CachedRoles"/>
 /// before serialization, since HybridCache + System.Text.Json do not serialize discriminated
-/// unions polymorphically without extra config.
+/// unions polymorphically without extra config. A transient
+/// <see cref="CompanyRolesResult.Unavailable"/> is not retained (see <see cref="BrregCache"/>) so
+/// an outage never hides roles for the full 24 h TTL.
 /// </summary>
 internal sealed class CachingRolesProvider(
     IRolesProvider inner,
@@ -24,24 +26,19 @@ internal sealed class CachingRolesProvider(
     IOptions<BrregOptions> options,
     ILogger<CachingRolesProvider> logger) : IRolesProvider
 {
-    public async Task<CompanyRolesResult> GetRolesAsync(OrganizationNumber org, CancellationToken ct)
+    public Task<CompanyRolesResult> GetRolesAsync(OrganizationNumber org, CancellationToken ct)
     {
         var cacheKey = $"roles:{org.Value}";
-        var ttl = options.Value.CacheTtl;
-
         logger.LogDebug("Cache lookup for {Key}", cacheKey);
 
-        var cached = await cache.GetOrCreateAsync(
+        return cache.GetOrCreateUnionAsync(
             cacheKey,
-            async cancel =>
-            {
-                var result = await inner.GetRolesAsync(org, cancel);
-                return CachedRoles.From(result);
-            },
-            new HybridCacheEntryOptions { Expiration = ttl },
-            cancellationToken: ct);
-
-        return cached.ToResult();
+            options.Value.CacheTtl,
+            cancel => inner.GetRolesAsync(org, cancel),
+            CachedRoles.From,
+            cached => cached.ToResult(),
+            result => result is not CompanyRolesResult.Unavailable,
+            ct);
     }
 }
 

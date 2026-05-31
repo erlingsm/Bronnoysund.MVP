@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-using System.Globalization;
 using Bronnoysund.Application.Dtos;
 using Bronnoysund.Application.Ports;
 using Bronnoysund.Application.Results;
@@ -54,25 +53,23 @@ internal sealed class BrregCompanyProvider(
         Details: BuildDetails(dto));
 
     private static CompanyDetails BuildDetails(BrregEnhetDto dto) => new(
-        Website: NullIfEmpty(dto.Hjemmeside),
-        Email: NullIfEmpty(dto.Epostadresse),
-        Phone: NullIfEmpty(dto.Telefon),
-        MobilePhone: NullIfEmpty(dto.Mobil),
+        Website: BrregParse.NullIfEmpty(dto.Hjemmeside),
+        Email: BrregParse.NullIfEmpty(dto.Epostadresse),
+        Phone: BrregParse.NullIfEmpty(dto.Telefon),
+        MobilePhone: BrregParse.NullIfEmpty(dto.Mobil),
         BusinessAddress: MapAddress(dto.Forretningsadresse),
         PostalAddress: MapAddress(dto.Postadresse),
         PrimaryIndustry: MapIndustry(dto.Naeringskode1),
         EmployeeCount: dto.HarRegistrertAntallAnsatte == true ? dto.AntallAnsatte : null,
         SectorCode: dto.InstitusjonellSektorkode?.Kode,
         SectorDescription: dto.InstitusjonellSektorkode?.Beskrivelse,
-        FoundingDate: ParseDate(dto.Stiftelsesdato),
-        RegisteredDate: ParseDate(dto.RegistreringsdatoEnhetsregisteret),
+        FoundingDate: BrregParse.Date(dto.Stiftelsesdato),
+        RegisteredDate: BrregParse.Date(dto.RegistreringsdatoEnhetsregisteret),
         RegisteredInVatRegistry: dto.RegistrertIMvaregisteret,
         RegisteredInBusinessRegistry: dto.RegistrertIForetaksregisteret,
         IsBankrupt: dto.Konkurs,
-        BankruptcyDate: ParseDate(dto.Konkursdato),
-        DeletedDate: ParseDate(dto.Slettedato));
-
-    private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
+        BankruptcyDate: BrregParse.Date(dto.Konkursdato),
+        DeletedDate: BrregParse.Date(dto.Slettedato));
 
     private static PostalAddress? MapAddress(BrregFullAdresseDto? a)
     {
@@ -82,21 +79,14 @@ internal sealed class BrregCompanyProvider(
         }
         return new PostalAddress(
             StreetAddress: a.StreetLine(),
-            PostalCode: NullIfEmpty(a.Postnummer),
-            City: NullIfEmpty(a.Poststed),
-            Municipality: NullIfEmpty(a.Kommune),
-            Country: NullIfEmpty(a.Land));
+            PostalCode: BrregParse.NullIfEmpty(a.Postnummer),
+            City: BrregParse.NullIfEmpty(a.Poststed),
+            Municipality: BrregParse.NullIfEmpty(a.Kommune),
+            Country: BrregParse.NullIfEmpty(a.Land));
     }
 
     private static IndustryCode? MapIndustry(BrregKodeDto? code) =>
         code is null || string.IsNullOrWhiteSpace(code.Kode)
             ? null
             : new IndustryCode(code.Kode, code.Beskrivelse ?? string.Empty);
-
-    private static DateOnly? ParseDate(string? iso) =>
-        string.IsNullOrWhiteSpace(iso)
-            ? null
-            : DateOnly.TryParseExact(iso, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
-                ? d
-                : null;
 }

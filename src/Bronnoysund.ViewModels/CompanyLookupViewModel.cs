@@ -100,6 +100,7 @@ public sealed partial class CompanyLookupViewModel(
         Found = null;
         Roles = null;
 
+        CompanyResponse? found = null;
         try
         {
             var result = await lookupHandler.HandleAsync(new LookupCompanyQuery(OrgNumberInput), ct);
@@ -107,10 +108,8 @@ public sealed partial class CompanyLookupViewModel(
             {
                 case CompanyLookupResult.Found f:
                     Found = f.Company;
+                    found = f.Company;
                     StatusMessage = localizer["FoundInRegistry"];
-                    // Enrich the card with roles. A failure here must not turn a successful
-                    // company lookup into an error — the section simply stays hidden.
-                    await LoadRolesAsync(f.Company.OrganizationNumber, ct);
                     break;
                 case CompanyLookupResult.NotFound nf:
                     ErrorMessage = localizer["NotFoundForOrgNumber", nf.OrganizationNumber];
@@ -127,19 +126,43 @@ public sealed partial class CompanyLookupViewModel(
         {
             IsBusy = false;
         }
+
+        // Roles are best-effort enrichment loaded after the core lookup has fully completed — the
+        // detail card and the busy indicator are released first, then the roles block fills in
+        // when ready. Done outside the try/finally above so the card is never held hostage to a
+        // second Brreg round-trip, and a roles failure can never demote a successful lookup.
+        if (found is not null)
+        {
+            await LoadRolesAsync(found.OrganizationNumber, ct);
+        }
     }
 
     /// <summary>
-    /// Fetch the roles for the looked-up entity. Roles are a secondary registry resource, so an
-    /// outage or absence is swallowed (the section just does not render) rather than surfaced as
-    /// a lookup error. The orgnr is already validated at this point — it came from a Found result.
+    /// Fetch the roles for the looked-up entity. Roles are a secondary registry resource, so any
+    /// outage, cancellation, or absence is swallowed (the section just does not render) rather
+    /// than surfaced as a lookup error. The orgnr is already validated at this point — it came
+    /// from a Found result. Catches broadly on purpose: a malformed /roller payload throws a
+    /// JsonException that the provider does not wrap, and a navigation/disposal mid-fetch throws
+    /// OperationCanceledException — neither must reach the Blazor circuit as an unhandled error.
     /// </summary>
     private async Task LoadRolesAsync(string orgNumber, CancellationToken ct)
     {
-        var result = await rolesHandler.HandleAsync(new LookupCompanyRolesQuery(orgNumber), ct);
-        Roles = result is CompanyRolesResult.Found f && f.Roles.Groups.Count > 0
-            ? f.Roles
-            : null;
+        try
+        {
+            var result = await rolesHandler.HandleAsync(new LookupCompanyRolesQuery(orgNumber), ct);
+            Roles = result is CompanyRolesResult.Found f && f.Roles.Groups.Count > 0
+                ? f.Roles
+                : null;
+        }
+        catch (OperationCanceledException)
+        {
+            // Lookup was cancelled (page navigation / circuit disposal) — abandon enrichment.
+        }
+        catch (Exception)
+        {
+            // Enrichment is best-effort; never let a roles failure surface as a lookup error.
+            Roles = null;
+        }
     }
 
     /// <summary>New name search — always starts at page 0 and clears any previous result.</summary>

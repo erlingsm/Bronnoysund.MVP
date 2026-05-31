@@ -407,6 +407,10 @@
         {
             line += $" ({orgnr})";
         }
+        if (role.IsDeceased)
+        {
+            line += $" · {L["RolesDeceased"]}";
+        }
         if (role.DateOfBirth is { } dob)
         {
             line += $" · {L["RolesBirthDate"]} {dob.Year.ToString(CultureInfo.InvariantCulture)}";

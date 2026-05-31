@@ -22,9 +22,6 @@ internal sealed class BrregRollegruppeDto
     [JsonPropertyName("type")]
     public BrregKodeDto? Type { get; set; }
 
-    [JsonPropertyName("sistEndret")]
-    public string? SistEndret { get; set; }
-
     [JsonPropertyName("roller")]
     public List<BrregRolleDto>? Roller { get; set; }
 }

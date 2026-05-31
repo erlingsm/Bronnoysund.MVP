@@ -16,6 +16,9 @@ namespace Bronnoysund.Infrastructure.Caching;
 /// <see cref="BrregOptions"/>. We wrap <see cref="CompanyLookupResult"/> in a concrete
 /// record (<see cref="CachedLookup"/>) before serialization — HybridCache + System.Text.Json
 /// do not support polymorphic serialization of discriminated unions without extra config.
+/// A transient <see cref="CompanyLookupResult.Unavailable"/> is not retained (see
+/// <see cref="BrregCache"/>): caching an outage for the 24 h TTL would hide a company long after
+/// Brreg recovers. Found and NotFound are stable facts and keep the full TTL.
 /// </summary>
 internal sealed class CachingCompanyProvider(
     ICompanyProvider inner,
@@ -23,24 +26,19 @@ internal sealed class CachingCompanyProvider(
     IOptions<BrregOptions> options,
     ILogger<CachingCompanyProvider> logger) : ICompanyProvider
 {
-    public async Task<CompanyLookupResult> LookupAsync(OrganizationNumber org, CancellationToken ct)
+    public Task<CompanyLookupResult> LookupAsync(OrganizationNumber org, CancellationToken ct)
     {
         var cacheKey = $"org:{org.Value}";
-        var ttl = options.Value.CacheTtl;
-
         logger.LogDebug("Cache lookup for {Key}", cacheKey);
 
-        var cached = await cache.GetOrCreateAsync(
+        return cache.GetOrCreateUnionAsync(
             cacheKey,
-            async cancel =>
-            {
-                var result = await inner.LookupAsync(org, cancel);
-                return CachedLookup.From(result);
-            },
-            new HybridCacheEntryOptions { Expiration = ttl },
-            cancellationToken: ct);
-
-        return cached.ToResult();
+            options.Value.CacheTtl,
+            cancel => inner.LookupAsync(org, cancel),
+            CachedLookup.From,
+            cached => cached.ToResult(),
+            result => result is not CompanyLookupResult.Unavailable,
+            ct);
     }
 }
 

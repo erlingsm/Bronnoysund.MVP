@@ -99,6 +99,12 @@ try
         return Results.LocalRedirect(redirectUri);
     });
 
+    // Single source of truth for the "Brreg is down" 503, shared by the JSON endpoints below.
+    static IResult BrregUnavailable(string detail) => Results.Problem(
+        statusCode: StatusCodes.Status503ServiceUnavailable,
+        title: "Brønnøysundregistrene (the Brønnøysund Register Centre) is temporarily unavailable",
+        detail: detail);
+
     // JSON API endpoint exposed at /api/companies/{orgnr} so the deployed host satisfies the
     // assignment's "return a response object with the four English fields" requirement directly,
     // without a separate WebApi deployment. Same handler, same caching, same result-union
@@ -122,10 +128,7 @@ try
                 error = "invalid_input",
                 message = inv.Message
             }),
-            CompanyLookupResult.Unavailable unav => Results.Problem(
-                statusCode: StatusCodes.Status503ServiceUnavailable,
-                title: "Brønnøysundregistrene (the Brønnøysund Register Centre) is temporarily unavailable",
-                detail: unav.Message),
+            CompanyLookupResult.Unavailable unav => BrregUnavailable(unav.Message),
             _ => Results.Problem("Unexpected result type.")
         };
     });
@@ -140,20 +143,19 @@ try
         return result switch
         {
             CompanyRolesResult.Found f => Results.Ok(f.Roles),
+            // 404 = roles resource absent (Brreg 404/410, typically a deleted/unregistered
+            // entity). A live entity with no roles returns 200 with an empty group list.
             CompanyRolesResult.NotFound nf => Results.NotFound(new
             {
                 error = "not_found",
-                message = $"No roles found for organization number {nf.OrganizationNumber}."
+                message = $"No roles are registered for organization number {nf.OrganizationNumber}, or the entity does not exist."
             }),
             CompanyRolesResult.InvalidInput inv => Results.BadRequest(new
             {
                 error = "invalid_input",
                 message = inv.Message
             }),
-            CompanyRolesResult.Unavailable unav => Results.Problem(
-                statusCode: StatusCodes.Status503ServiceUnavailable,
-                title: "Brønnøysundregistrene (the Brønnøysund Register Centre) is temporarily unavailable",
-                detail: unav.Message),
+            CompanyRolesResult.Unavailable unav => BrregUnavailable(unav.Message),
             _ => Results.Problem("Unexpected result type.")
         };
     });

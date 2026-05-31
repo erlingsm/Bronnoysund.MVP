@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-using System.Globalization;
 using Bronnoysund.Application.Dtos;
 using Bronnoysund.Application.Ports;
 using Bronnoysund.Application.Results;
@@ -60,7 +59,7 @@ internal sealed class BrregRolesProvider(
 
                 var roleTypeCode = role.Type?.Kode ?? string.Empty;
                 var roleTypeDescription = role.Type?.Beskrivelse ?? role.Type?.Kode ?? "Ukjent";
-                var electedBy = NullIfEmpty(role.ValgtAv?.Beskrivelse);
+                var electedBy = BrregParse.NullIfEmpty(role.ValgtAv?.Beskrivelse);
 
                 if (role.Person is { } person)
                 {
@@ -69,7 +68,7 @@ internal sealed class BrregRolesProvider(
                         RoleTypeDescription: roleTypeDescription,
                         Name: person.Navn?.Full() ?? "(uten navn)",
                         OrganizationNumber: null,
-                        DateOfBirth: ParseDate(person.Fodselsdato),
+                        DateOfBirth: BrregParse.Date(person.Fodselsdato),
                         IsDeceased: person.ErDoed == true,
                         ElectedBy: electedBy));
                 }
@@ -79,7 +78,7 @@ internal sealed class BrregRolesProvider(
                         RoleTypeCode: roleTypeCode,
                         RoleTypeDescription: roleTypeDescription,
                         Name: enhet.NameLine() ?? "(uten navn)",
-                        OrganizationNumber: NullIfEmpty(enhet.Organisasjonsnummer),
+                        OrganizationNumber: BrregParse.NullIfEmpty(enhet.Organisasjonsnummer),
                         DateOfBirth: null,
                         IsDeceased: false,
                         ElectedBy: electedBy));
@@ -98,13 +97,4 @@ internal sealed class BrregRolesProvider(
 
         return new CompanyRolesResponse(org.Value, groups);
     }
-
-    private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
-
-    private static DateOnly? ParseDate(string? iso) =>
-        string.IsNullOrWhiteSpace(iso)
-            ? null
-            : DateOnly.TryParseExact(iso, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
-                ? d
-                : null;
 }
