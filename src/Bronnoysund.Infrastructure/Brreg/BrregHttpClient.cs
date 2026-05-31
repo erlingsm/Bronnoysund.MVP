@@ -19,6 +19,9 @@ internal sealed class BrregHttpClient(HttpClient http, ILogger<BrregHttpClient> 
     public Task<BrregEnhetDto?> GetEnhetAsync(OrganizationNumber org, CancellationToken ct)
         => GetJsonOrNullAsync<BrregEnhetDto>($"enheter/{org.Value}", org.Value, ct);
 
+    public Task<BrregRollerDto?> GetRollerAsync(OrganizationNumber org, CancellationToken ct)
+        => GetJsonOrNullAsync<BrregRollerDto>($"enheter/{org.Value}/roller", org.Value, ct);
+
     public Task<BrregEnheterPageDto?> SearchEnheterByNameAsync(string query, int size, int page, CancellationToken ct)
     {
         // Uri.EscapeDataString safely encodes Norwegian characters (æøå) and spaces.

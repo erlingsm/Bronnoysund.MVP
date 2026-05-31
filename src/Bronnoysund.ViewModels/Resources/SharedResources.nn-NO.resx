@@ -75,6 +75,8 @@
   <data name="RolesPerson"><value>Person</value></data>
   <data name="RolesRoleType"><value>Rolle</value></data>
   <data name="RolesBirthDate"><value>Fødd</value></data>
+  <data name="RolesElectedBy"><value>Vald av</value></data>
+  <data name="RolesDeceased"><value>død</value></data>
   <data name="NoRoles"><value>Ingen aktive roller registrert.</value></data>
   <data name="SubUnitsSection"><value>Underenheter</value></data>
   <data name="NoSubUnits"><value>Ingen underenheter registrert.</value></data>

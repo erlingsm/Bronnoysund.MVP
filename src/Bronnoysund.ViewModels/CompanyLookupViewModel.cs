@@ -4,6 +4,7 @@ using Bronnoysund.Application.Dtos;
 using Bronnoysund.Application.Ports;
 using Bronnoysund.Application.Results;
 using Bronnoysund.Application.UseCases.LookupCompany;
+using Bronnoysund.Application.UseCases.LookupCompanyRoles;
 using Bronnoysund.Application.UseCases.SearchCompaniesByName;
 using Bronnoysund.ViewModels.Resources;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -14,6 +15,7 @@ namespace Bronnoysund.ViewModels;
 
 public sealed partial class CompanyLookupViewModel(
     LookupCompanyHandler lookupHandler,
+    LookupCompanyRolesHandler rolesHandler,
     SearchCompaniesByNameHandler searchHandler,
     IStringLocalizer<SharedResources> localizer) : ObservableObject
 {
@@ -31,6 +33,13 @@ public sealed partial class CompanyLookupViewModel(
 
     [ObservableProperty]
     public partial CompanyResponse? Found { get; set; }
+
+    /// <summary>
+    /// Roles (board, CEO, auditor, …) for the looked-up entity. Loaded as a follow-up to a
+    /// successful lookup and null when absent, still loading, or unavailable.
+    /// </summary>
+    [ObservableProperty]
+    public partial CompanyRolesResponse? Roles { get; set; }
 
     [ObservableProperty]
     public partial string? ErrorMessage { get; set; }
@@ -89,7 +98,9 @@ public sealed partial class CompanyLookupViewModel(
         ErrorMessage = null;
         StatusMessage = null;
         Found = null;
+        Roles = null;
 
+        CompanyResponse? found = null;
         try
         {
             var result = await lookupHandler.HandleAsync(new LookupCompanyQuery(OrgNumberInput), ct);
@@ -97,6 +108,7 @@ public sealed partial class CompanyLookupViewModel(
             {
                 case CompanyLookupResult.Found f:
                     Found = f.Company;
+                    found = f.Company;
                     StatusMessage = localizer["FoundInRegistry"];
                     break;
                 case CompanyLookupResult.NotFound nf:
@@ -113,6 +125,43 @@ public sealed partial class CompanyLookupViewModel(
         finally
         {
             IsBusy = false;
+        }
+
+        // Roles are best-effort enrichment loaded after the core lookup has fully completed — the
+        // detail card and the busy indicator are released first, then the roles block fills in
+        // when ready. Done outside the try/finally above so the card is never held hostage to a
+        // second Brreg round-trip, and a roles failure can never demote a successful lookup.
+        if (found is not null)
+        {
+            await LoadRolesAsync(found.OrganizationNumber, ct);
+        }
+    }
+
+    /// <summary>
+    /// Fetch the roles for the looked-up entity. Roles are a secondary registry resource, so any
+    /// outage, cancellation, or absence is swallowed (the section just does not render) rather
+    /// than surfaced as a lookup error. The orgnr is already validated at this point — it came
+    /// from a Found result. Catches broadly on purpose: a malformed /roller payload throws a
+    /// JsonException that the provider does not wrap, and a navigation/disposal mid-fetch throws
+    /// OperationCanceledException — neither must reach the Blazor circuit as an unhandled error.
+    /// </summary>
+    private async Task LoadRolesAsync(string orgNumber, CancellationToken ct)
+    {
+        try
+        {
+            var result = await rolesHandler.HandleAsync(new LookupCompanyRolesQuery(orgNumber), ct);
+            Roles = result is CompanyRolesResult.Found f && f.Roles.Groups.Count > 0
+                ? f.Roles
+                : null;
+        }
+        catch (OperationCanceledException)
+        {
+            // Lookup was cancelled (page navigation / circuit disposal) — abandon enrichment.
+        }
+        catch (Exception)
+        {
+            // Enrichment is best-effort; never let a roles failure surface as a lookup error.
+            Roles = null;
         }
     }
 
@@ -165,6 +214,7 @@ public sealed partial class CompanyLookupViewModel(
         ErrorMessage = null;
         StatusMessage = null;
         Found = null;
+        Roles = null;
         SearchHits = [];
 
         try
@@ -228,6 +278,7 @@ public sealed partial class CompanyLookupViewModel(
         NameQueryInput = string.Empty;
         IsNameSearchMode = false;
         Found = null;
+        Roles = null;
         ErrorMessage = null;
         StatusMessage = null;
         SearchHits = [];

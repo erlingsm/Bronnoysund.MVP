@@ -192,6 +192,23 @@
                 }
             }
 
+            @if (ViewModel.Roles is { Groups.Count: > 0 } roles)
+            {
+                <MudText Typo="Typo.subtitle1" Class="mt-3 mb-1">@L["RolesSection"]</MudText>
+                @foreach (var group in roles.Groups)
+                {
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mt-2 mb-0">@group.TypeDescription</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var role in group.Roles)
+                        {
+                            <MudListItem T="string"
+                                         Icon="@(role.OrganizationNumber is null ? Icons.Material.Filled.Person : Icons.Material.Filled.Business)"
+                                         Text="@FormatRole(role)" />
+                        }
+                    </MudList>
+                }
+            }
+
             @if (ViewModel.StatusMessage is not null)
             {
                 <MudText Typo="Typo.caption" Color="Color.Success" Class="mt-3 d-block">
@@ -308,6 +325,7 @@
         ViewModel.SearchHits = [];
         ViewModel.SearchTotalElements = 0;
         ViewModel.Found = null;
+        ViewModel.Roles = null;
     }
 
     private async Task OnLookupClicked() => await ViewModel.LookupAsync(_cts.Token);
@@ -379,6 +397,30 @@
         || d.RegisteredDate is not null
         || d.RegisteredInVatRegistry is not null
         || d.RegisteredInBusinessRegistry is not null;
+
+    // Build a one-line label for a role: "Name — Role type (orgnr) · Born 1968 · Elected by …".
+    // Only the parts present are shown; an entity holder carries an orgnr, a person a birth year.
+    private string FormatRole(RoleHolder role)
+    {
+        var line = $"{role.Name} — {role.RoleTypeDescription}";
+        if (role.OrganizationNumber is { } orgnr)
+        {
+            line += $" ({orgnr})";
+        }
+        if (role.IsDeceased)
+        {
+            line += $" · {L["RolesDeceased"]}";
+        }
+        if (role.DateOfBirth is { } dob)
+        {
+            line += $" · {L["RolesBirthDate"]} {dob.Year.ToString(CultureInfo.InvariantCulture)}";
+        }
+        if (!string.IsNullOrWhiteSpace(role.ElectedBy))
+        {
+            line += $" · {L["RolesElectedBy"]} {role.ElectedBy}";
+        }
+        return line;
+    }
 
     private static string? FormatAddress(PostalAddress a)
     {

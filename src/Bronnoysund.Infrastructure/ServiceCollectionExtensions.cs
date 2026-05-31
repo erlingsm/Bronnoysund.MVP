@@ -40,6 +40,14 @@ public static class ServiceCollectionExtensions
                 options: sp.GetRequiredService<IOptions<BrregOptions>>(),
                 logger: sp.GetRequiredService<ILogger<CachingCompanyProvider>>()));
 
+        services.AddSingleton<BrregRolesProvider>();
+        services.AddSingleton<IRolesProvider>(sp =>
+            new CachingRolesProvider(
+                inner: sp.GetRequiredService<BrregRolesProvider>(),
+                cache: sp.GetRequiredService<HybridCache>(),
+                options: sp.GetRequiredService<IOptions<BrregOptions>>(),
+                logger: sp.GetRequiredService<ILogger<CachingRolesProvider>>()));
+
         services.AddSingleton<BrregCompanySearchProvider>();
         services.AddSingleton<ICompanySearchProvider>(sp =>
             new CachingCompanySearchProvider(

@@ -19,7 +19,7 @@ A guided click-through of the deployed UI. About three minutes.
 
 1. Open <https://bronnoysund-mvp.redpebble-469bb928.norwayeast.azurecontainerapps.io> in any modern browser. The page is a single input with a "Look up" button and a radio toggle for **Organization number** vs **Name**.
 
-2. **Org-number happy path** — enter `919300388` and press Enter. The detail card slides in with company name (Artisan Consulting AS), `AS` form code, `Bokmål` language form, plus a "Details" block with industry, employee count, founding date, and which Brreg sub-registries the entity is in.
+2. **Org-number happy path** — enter `919300388` and press Enter. The detail card slides in with company name (Artisan Consulting AS), `AS` form code, `Bokmål` language form, plus a "Details" block with industry, employee count, founding date, and which Brreg sub-registries the entity is in. Below that, a **Roles** block lists who's registered in the company — kept in Brreg's own role groups (Daglig leder, Styre, Revisor …), each holder with their role and birth year, and "Elected by" where it applies (e.g. employee representatives). Try `923609016` (Equinor ASA) for a full board. Roles load as a follow-up call right after the core card, so the card never waits on them.
 
 3. **JSON flip-view** — click the small `<>` icon in the bottom-right corner of the detail card. The card flips with a 0.6 s `rotateY` animation to show the same data as JSON, formatted line-by-line — the exact shape the API returns. Click the eye icon on the back of the card to flip it back.
 
@@ -56,7 +56,7 @@ For a curated table of inputs that hit every code path, see [Demo inputs](#demo-
 - **Polly v8** (`Microsoft.Extensions.Http.Resilience`) — retry / circuit breaker / timeout / rate limiter
 - **HybridCache** — in-process cache; 24 h TTL for orgnr lookups, 5 min for name-search pages
 - **Serilog** — structured logging (console + rolling file)
-- **MSTest + FluentAssertions + NSubstitute + WireMock.Net** — testing (77 tests, < 1 s total runtime)
+- **MSTest + FluentAssertions + NSubstitute + WireMock.Net** — testing (81 tests, < 1 s total runtime)
 
 ## Project layout
 
@@ -73,7 +73,7 @@ For a curated table of inputs that hit every code path, see [Demo inputs](#demo-
 ├── tests/
 │   ├── Bronnoysund.Domain.Tests/         24 tests — MOD11, normalisation, edge cases
 │   ├── Bronnoysund.Application.Tests/    21 tests — handler logic, pagination, cancellation
-│   ├── Bronnoysund.Infrastructure.Tests/ 24 tests — WireMock-stubbed HTTP + cache round-trips
+│   ├── Bronnoysund.Infrastructure.Tests/ 28 tests — WireMock-stubbed HTTP + cache round-trips, roles mapping
 │   └── Bronnoysund.ViewModels.Tests/      8 tests — localisation parity (en / nb-NO / nn-NO)
 ├── deploy/
 │   ├── deploy.sh                       Local manual deploy (build + test + acr build + update)
@@ -97,10 +97,11 @@ Two hosts expose the same JSON API. Same handler, same caching, same response sh
 | Method | Path (BlazorWeb) | Path (WebApi) | Purpose |
 | --- | --- | --- | --- |
 | `GET` | `/api/companies/{orgnr}` | `/companies/{orgnr}` | Look up by organisation number |
+| `GET` | `/api/companies/{orgnr}/roles` | `/companies/{orgnr}/roles` | Roles (board, CEO, auditor …) grouped by role group |
 | `GET` | _(not exposed)_ | `/companies?name={q}&size={N}&page={P}` | Paginated name search |
 | `GET` | _(not exposed)_ | `/health` | Liveness probe |
 
-The BlazorWeb host keeps its surface minimal — the UI uses its own internal handlers and only exposes the orgnr lookup as JSON. The WebApi host is the full REST surface.
+The BlazorWeb host keeps its surface minimal — the UI uses its own internal handlers and exposes the orgnr lookup and its roles as JSON. The WebApi host is the full REST surface.
 
 ### Response — `GET /companies/{orgnr}` (200 OK)
 
@@ -134,6 +135,42 @@ The four PDF-required fields at the top, optional `details` sub-object with bonu
 ```
 
 Null fields (`website`, `email`, etc.) are omitted from the serialised JSON (`DefaultIgnoreCondition = WhenWritingNull`).
+
+### Response — `GET /companies/{orgnr}/roles` (200 OK)
+
+Roles are kept in Brreg's own role groups rather than flattened, so the consumer sees the same structure the registry uses. A holder is either a person (carries `dateOfBirth`) or an entity such as an audit firm (carries `organizationNumber`). Roles that are resigned (`fratraadt`) or deregistered (`avregistrert`) are filtered out, and groups left empty after that are dropped. Only open data — names and birth dates — is exposed; never `fødselsnummer` (that requires Maskinporten).
+
+```json
+{
+  "organizationNumber": "923609016",
+  "groups": [
+    {
+      "typeCode": "DAGL",
+      "typeDescription": "Daglig leder",
+      "roles": [
+        { "roleTypeCode": "DAGL", "roleTypeDescription": "Daglig leder", "name": "Anders Opedal", "dateOfBirth": "1968-05-04", "isDeceased": false }
+      ]
+    },
+    {
+      "typeCode": "STYR",
+      "typeDescription": "Styre",
+      "roles": [
+        { "roleTypeCode": "LEDE", "roleTypeDescription": "Styrets leder", "name": "Jon Erik Reinhardsen", "dateOfBirth": "1956-11-30", "isDeceased": false },
+        { "roleTypeCode": "MEDL", "roleTypeDescription": "Styremedlem", "name": "Hilde Møllerstad", "isDeceased": false, "electedBy": "Representant for de ansatte" }
+      ]
+    },
+    {
+      "typeCode": "REVI",
+      "typeDescription": "Revisor",
+      "roles": [
+        { "roleTypeCode": "REVI", "roleTypeDescription": "Ansvarlig revisor", "name": "ERNST & YOUNG AS", "organizationNumber": "967611600", "isDeceased": false }
+      ]
+    }
+  ]
+}
+```
+
+A `404` (`not_found`) means Brreg has no roles registered for that orgnr; a valid-but-unregistered or malformed orgnr returns `400` as for the lookup endpoint.
 
 ### Response — `GET /companies?name=...` (200 OK)
 
@@ -209,6 +246,7 @@ curl http://localhost:5199/api/companies/919300388
 dotnet run --project src/Bronnoysund.WebApi --urls http://localhost:5000
 curl http://localhost:5000/health
 curl http://localhost:5000/companies/919300388
+curl http://localhost:5000/companies/923609016/roles
 curl "http://localhost:5000/companies?name=Statens+vegvesen&size=5"
 ```
 
@@ -222,7 +260,7 @@ Both hosts hit Brønnøysund directly (no DB, no separate API tier — the Appli
 dotnet test
 ```
 
-77 tests across four projects, total runtime under one second. No real Brønnøysund call during CI — integration tests use WireMock.Net to stub the HTTP layer deterministically.
+81 tests across four projects, total runtime under one second. No real Brønnøysund call during CI — integration tests use WireMock.Net to stub the HTTP layer deterministically.
 
 ## Architecture
 
@@ -239,12 +277,12 @@ Domain ← Application ← Infrastructure
 | Layer | Responsibility | Outside dependencies |
 | --- | --- | --- |
 | `Domain` | `OrganizationNumber` value object, `Company` entity, `LanguageForm` enum | None (.NET BCL only) |
-| `Application` | Use cases (`LookupCompanyHandler`, `SearchCompaniesByNameHandler`), ports (`ICompanyProvider`, `ICompanySearchProvider`), result discriminated union | Domain only |
-| `Infrastructure` | `BrregHttpClient` + DTOs, `CachingCompanyProvider` decorator, Polly resilience, HybridCache | Application + HTTP + caching libs |
-| `WebApi` | Minimal API endpoints (`/companies/{orgnr}`, `/companies?name=`, `/health`) | Application + Infrastructure |
+| `Application` | Use cases (`LookupCompanyHandler`, `LookupCompanyRolesHandler`, `SearchCompaniesByNameHandler`), ports (`ICompanyProvider`, `IRolesProvider`, `ICompanySearchProvider`), result discriminated unions | Domain only |
+| `Infrastructure` | `BrregHttpClient` + DTOs, `CachingCompanyProvider` / `CachingRolesProvider` decorators, Polly resilience, HybridCache | Application + HTTP + caching libs |
+| `WebApi` | Minimal API endpoints (`/companies/{orgnr}`, `/companies/{orgnr}/roles`, `/companies?name=`, `/health`) | Application + Infrastructure |
 | `ViewModels` | `CompanyLookupViewModel` (MVVM), localised strings | Application |
 | `Components` | Razor pages (`Lookup`) with MudBlazor | ViewModels + MudBlazor |
-| `BlazorWeb` | Server-mode host, cookie-based culture switcher, request localisation, `/api/companies/{orgnr}` JSON endpoint | Components + ViewModels + Application + Infrastructure |
+| `BlazorWeb` | Server-mode host, cookie-based culture switcher, request localisation, `/api/companies/{orgnr}` + `/roles` JSON endpoints | Components + ViewModels + Application + Infrastructure |
 
 ### Key design choices
 
@@ -260,9 +298,11 @@ Domain ← Application ← Infrastructure
 
 **Shared view-model across host + layout.** `CompanyLookupViewModel` is registered as Scoped (per Blazor Server circuit) so the layout (`MainLayout`) and the page (`Lookup`) share the same instance. That's what lets the title-click handler call `VM.Reset()` and see the page update immediately, without re-navigation.
 
+**Roles as separate progressive enrichment.** Roles come from a second Brreg resource (`/enheter/{orgnr}/roller`), so they get their own port, provider, caching decorator (`roles:{orgnr}`, 24 h TTL) and result union rather than being folded into the company lookup. The view-model fetches them as a follow-up right after a successful lookup — the core card renders first, the roles block fills in when ready — and a roles outage never demotes a successful lookup to an error; the section simply stays hidden. The provider keeps Brreg's role groups intact (Styre, Daglig leder, Revisor …) instead of flattening, so the UI presents roles the way the registry organises them. Share ownership (aksjonærer / reelle rettighetshavere) is deliberately not attempted: it has no open API and requires Maskinporten — see [Other Brreg registries](#other-brreg-registries-system-of-systems).
+
 ## Brreg coverage
 
-The Brønnøysund Register Centre exposes ~50 endpoints across eight registries on the umbrella docs at <https://brreg.github.io/docs/>. This MVP uses two of them. The architecture is set up so each new endpoint is one adapter in `Infrastructure` with no ripple into the use-case handlers or UI.
+The Brønnøysund Register Centre exposes ~50 endpoints across eight registries on the umbrella docs at <https://brreg.github.io/docs/>. This MVP uses three of them. The architecture is set up so each new endpoint is one adapter in `Infrastructure` with no ripple into the use-case handlers or UI.
 
 ### Used today (`Enhetsregisteret`, no auth)
 
@@ -270,12 +310,12 @@ The Brønnøysund Register Centre exposes ~50 endpoints across eight registries 
 | --- | --- | --- |
 | `GET /enheter/{orgnr}` | ✓ via `BrregCompanyProvider` | ✓ Lookup page, orgnr mode |
 | `GET /enheter?navn=...` (paginated) | ✓ via `BrregCompanySearchProvider` | ✓ Lookup page, name mode |
+| `GET /enheter/{orgnr}/roller` | ✓ via `BrregRolesProvider` | ✓ Roles block on the detail card |
 
 ### Adjacent extensions inside `Enhetsregisteret` (also no auth)
 
 | Endpoint | What it adds | Effort |
 | --- | --- | --- |
-| `GET /enheter/{orgnr}/roller` | Roles (board, CEO, signature authority) | 1 new DTO + 1 endpoint + UI tab |
 | `GET /enheter/{orgnr}/underenheter` | Sub-units / branches | Tree visualisation for conglomerates |
 | `GET /enheter/lastet-ned/oppdateringer` | Change feed since timestamp | Event-driven cache invalidation |
 | `GET /organisasjonsformer` | Code → description (AS = Aksjeselskap) | Tooltip / human-readable labels |
@@ -305,7 +345,7 @@ A deliberate trade-off given the scope of this MVP.
 | [Refit](https://github.com/reactiveui/refit) (interface) | ~20 | ✓ Only what we declare |
 | **Hand-coded (chosen)** | ~150 | ✓ Only what we use |
 
-We use **2 endpoints** out of ~50 in Brreg's spec. Code generation would put 4 000+ lines of auto-generated code in the repo for surfaces we never call — every regeneration would be a 4 000-line diff in code review, IDE search would hit `Generated/` files for unrelated endpoints, and a new reader would have to learn which folder bugs do _not_ live in.
+We use **3 endpoints** out of ~50 in Brreg's spec. Code generation would put 4 000+ lines of auto-generated code in the repo for surfaces we never call — every regeneration would be a 4 000-line diff in code review, IDE search would hit `Generated/` files for unrelated endpoints, and a new reader would have to learn which folder bugs do _not_ live in.
 
 Schema drift is caught by the WireMock-stubbed integration tests (`Status404_ReturnsNull`, `Status410Gone_ReturnsNull`, mapping tests) deterministically — we don't need a regenerator to notice when Brreg changes a field.
 
